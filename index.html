@@ -299,6 +299,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
         <button class="fb" data-cat="Kitgun">Kitgun</button>
         <button class="fb" data-cat="Zaw">Zaw</button>
         <button class="fb" data-cat="MOA">MOA</button>
+        <button class="fb" data-cat="K-Drive">K-Drive</button>
       </div>
       <div class="toolbar" style="margin-top:-.3rem">
         <button class="fs" data-status="claimable">⬇ De luat</button>
@@ -550,10 +551,11 @@ function badgeClass(cat){
   if(cat==='Kitgun')return 'bs';
   if(cat==='Zaw')return 'bm';
   if(cat==='MOA')return 'bo';
+  if(cat==='K-Drive')return 'bw';
   return 'bo';
 }
 function badgeLabel(cat){
-  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing','Kitgun':'Kitgun','Zaw':'Zaw','MOA':'MOA'};
+  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing','Kitgun':'Kitgun','Zaw':'Zaw','MOA':'MOA','K-Drive':'K-Drive'};
   return m[cat]||cat||'Altul';
 }
 
@@ -1006,6 +1008,22 @@ async function process(file){
       return {...w,category:'Archwing',craftStatus:cs,craftingTs:bpComp?(craftingBPs.get(bpComp.uniqueName)||null):null};
     });
 
+    // TEMP DEBUG — find K-Drive board data (ItemType/ModularParts) so the exact
+    // internal codenames per Board (Flatbelly, Bad Baby, Needlenose, Runway,
+    // Feverspine) can be confirmed against real save data instead of guessed.
+    (function debugKDrive(){
+      const candidates = ['Hoverboards','KDrives','Vehicles'];
+      candidates.forEach(k=>{
+        if(inv[k] && inv[k].length){
+          console.log(`[MasteryChecker debug] inv.${k}: ${inv[k].length} entries`, inv[k]);
+        }
+      });
+      const miscHoverboard = (inv.MiscItems||[]).filter(m=>/Hoverboard/i.test(m.ItemType||''));
+      console.log(`[MasteryChecker debug] inv.MiscItems matching Hoverboard: ${miscHoverboard.length}`, miscHoverboard);
+      const recipesHoverboard = (inv.Recipes||[]).filter(r=>/Hoverboard/i.test(r.ItemType||''));
+      console.log(`[MasteryChecker debug] inv.Recipes matching Hoverboard: ${recipesHoverboard.length}`, recipesHoverboard);
+    })();
+
     // Filter Modular items (Kitguns, Zaws, MOA companions) — these don't exist as
     // fixed entries in the static item catalog (each one is built from player-chosen
     // parts), so we detect them directly from the save data's ModularParts field
@@ -1115,7 +1133,7 @@ async function process(file){
 
     const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
-    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7,'Kitgun':8,'Zaw':9,'MOA':10};
+    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7,'Kitgun':8,'Zaw':9,'MOA':10,'K-Drive':11};
     const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3,not_built:4};
     notMastered.sort((a,b)=>{
       const sa=statusOrder[a.craftStatus]??4, sb=statusOrder[b.craftStatus]??4;
