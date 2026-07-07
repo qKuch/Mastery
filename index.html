@@ -1716,9 +1716,62 @@ function showFileInfo(file){
 let _lastFileHandle = null;
 let _lastFileName = '';
 
+// ── Persist the file handle across browser sessions ─────────────────
+// FileSystemFileHandle objects are structured-clonable, so they can be
+// stored in IndexedDB and retrieved on a later visit. Whether that lets us
+// skip the picker entirely on the next visit depends on the browser having
+// granted "Allow on every visit" (Chrome 122+ persistent permissions) —
+// if not, we still avoid re-browsing folders: queryPermission() failing
+// just means we ask for the SAME handle again with one click.
+const HANDLE_DB_NAME = 'wf-mastery-checker';
+const HANDLE_STORE = 'handles';
+const HANDLE_KEY = 'lastDataHandle';
+
+function openHandleDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(HANDLE_DB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(HANDLE_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveHandleToDB(handle) {
+  try {
+    const db = await openHandleDB();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(HANDLE_STORE, 'readwrite');
+      tx.objectStore(HANDLE_STORE).put(handle, HANDLE_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch(e) { /* IndexedDB unavailable — silently skip persistence */ }
+}
+
+async function loadHandleFromDB() {
+  try {
+    const db = await openHandleDB();
+    return await new Promise((resolve, reject) => {
+      const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(HANDLE_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch(e) { return null; }
+}
+
+async function clearHandleFromDB() {
+  try {
+    const db = await openHandleDB();
+    db.transaction(HANDLE_STORE, 'readwrite').objectStore(HANDLE_STORE).delete(HANDLE_KEY);
+  } catch(e) { /* ignore */ }
+}
+
 async function loadFile(file, handle) {
   _lastFileName = file.name;
-  if(handle) _lastFileHandle = handle;
+  if(handle) {
+    _lastFileHandle = handle;
+    saveHandleToDB(handle); // fire-and-forget
+  }
   showFileInfo(file);
   document.getElementById('loaded-filename').textContent = file.name;
   document.getElementById('reload-row').style.display = '';
@@ -1755,12 +1808,14 @@ drop.ondrop=e=>{
 };
 
 document.getElementById('reload-btn').onclick = async () => {
+  const btn = document.getElementById('reload-btn');
   if(_lastFileHandle){
     try {
       // Try to re-read same file - if permission still active, no dialog shown
       const perm = await _lastFileHandle.queryPermission({mode:'read'});
       if(perm === 'granted'){
         const file = await _lastFileHandle.getFile();
+        btn.textContent = '🔄 Reîncarcă același fișier';
         await loadFile(file, _lastFileHandle);
         return;
       }
@@ -1768,14 +1823,48 @@ document.getElementById('reload-btn').onclick = async () => {
       const req = await _lastFileHandle.requestPermission({mode:'read'});
       if(req === 'granted'){
         const file = await _lastFileHandle.getFile();
+        btn.textContent = '🔄 Reîncarcă același fișier';
         await loadFile(file, _lastFileHandle);
         return;
       }
-    } catch(e){ /* fall through */ }
+    } catch(e){
+      // Handle is stale (file moved/deleted) — forget it and fall back to picker
+      clearHandleFromDB();
+      _lastFileHandle = null;
+    }
   }
-  // No handle yet - open picker (startIn remembers last folder)
+  // No usable handle - open picker (startIn remembers last folder)
   openFilePicker();
 };
+
+// ── Auto-restore on page load ────────────────────────────────────────
+// If a handle was saved from a previous visit, try to reuse it silently.
+// - If the browser still grants read access (e.g. "Allow on every visit"
+//   was chosen), the file loads with zero clicks.
+// - Otherwise, surface a one-click "reconnect" affordance instead of
+//   forcing the user to browse to the file again from scratch.
+async function tryAutoLoadFromHandle() {
+  if(!window.showOpenFilePicker) return; // no File System Access API — nothing to restore
+  const handle = await loadHandleFromDB();
+  if(!handle) return;
+  try {
+    const perm = await handle.queryPermission({mode:'read'});
+    if(perm === 'granted'){
+      const file = await handle.getFile();
+      await loadFile(file, handle);
+      return;
+    }
+    // Known handle, but permission needs a fresh user gesture this session
+    _lastFileHandle = handle;
+    document.getElementById('reload-row').style.display = '';
+    document.getElementById('reload-btn').textContent = `🔌 Reconectează la ${handle.name || 'fișierul anterior'}`;
+    document.getElementById('loaded-filename').textContent = 'Permisiune expirată — un click pentru reconectare, fără să răscolești folderele';
+  } catch(e) {
+    // Handle no longer valid (file moved/deleted/renamed) — forget it
+    clearHandleFromDB();
+  }
+}
+tryAutoLoadFromHandle();
 
 document.getElementById('sortSelect').addEventListener('change', render);
 
