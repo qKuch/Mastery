@@ -642,9 +642,7 @@ function buildCard(w){
   const d=document.createElement('div');
   const cs=w.craftStatus;
   d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':cs==='bp_only'?' partial':'');
-  const wikiSlug=w.name.replace(/ /g,'_');
-  const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
-  let craftTag='';
+  const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
   if(cs==='claimable') craftTag=`<span class="craft-tag tag-claim">⬇ De luat din Foundry</span>`;
   else if(cs==='owned') craftTag=`<span class="craft-tag tag-owned">🎒 În inventar</span>`;
   else if(cs==='craftable') craftTag=`<span class="craft-tag tag-craft">🔨 Se poate crafta</span>`;
@@ -969,7 +967,44 @@ async function process(file){
       return {...w,category:'Archwing',craftStatus:cs,craftingTs:bpComp?(craftingBPs.get(bpComp.uniqueName)||null):null};
     });
 
-    const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions];
+    // Filter Modular items (Kitguns, Zaws, MOA companions) — these don't exist as
+    // fixed entries in the static item catalog (each one is built from player-chosen
+    // parts), so we detect them directly from the save data's ModularParts field
+    // instead of the __allItems list used for every other category above.
+    const itemNameByUniqueName = new Map(__allItems.map(w=>[w.uniqueName, w.name]));
+    const humanizePart = u => {
+      if(!u) return '';
+      const seg = u.split('/').pop();
+      return seg.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g,'$1 $2');
+    };
+    const modularSpecs=[
+      {invKey:'Pistols', label:'Kitgun', category:'Secondary', capXP:450000, wikiSlug:'Kitgun'},
+      {invKey:'Melee', label:'Zaw', category:'Melee', capXP:450000, wikiSlug:'Zaw'},
+      {invKey:'MoaPets', label:'MOA', category:'Companion', capXP:900000, wikiSlug:'MOA'},
+    ];
+    const notMasteredModular=[];
+    modularSpecs.forEach(spec=>{
+      (inv[spec.invKey]||[]).forEach(w=>{
+        if(!w.ModularParts || !w.ModularParts.length) return; // skip regular (non-modular) entries in the same inv array
+        if(!w.ItemType) return;
+        if(mastered.has(w.ItemType)) return;
+        const xp=w.XP||0;
+        if(xp>=spec.capXP) return; // already picked up as mastered by the XP fallback above
+        const partNames=w.ModularParts.map(p=>itemNameByUniqueName.get(p)||humanizePart(p)).filter(Boolean);
+        const label=partNames.length ? `${spec.label}: ${partNames.join(' + ')}` : `${spec.label} (necunoscut)`;
+        notMasteredModular.push({
+          uniqueName: w.ItemType,
+          name: label,
+          category: spec.category,
+          craftStatus: 'owned',
+          isModular: true,
+          modularWikiSlug: spec.wikiSlug,
+          components: [],
+        });
+      });
+    });
+
+    const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
     const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7};
     const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3};
