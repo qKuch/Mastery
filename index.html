@@ -986,11 +986,13 @@ async function process(file){
       {invKey:'MoaPets', label:'MOA', category:'Companion', capXP:900000, wikiSlug:'MOA'},
     ];
     const notMasteredModular=[];
+    const modularAddressed=new Set(); // chamber/strike uniqueNames already mastered OR in an owned build
     modularSpecs.forEach(spec=>{
       const arr = inv[spec.invKey]||[];
       const builtOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
       builtOnes.forEach(w=>{
         if(!w.ItemType) return;
+        (w.ModularParts||[]).forEach(p=>modularAddressed.add(p));
         if(mastered.has(w.ItemType)) return;
         const xp=w.XP||0;
         if(xp>=spec.capXP) return; // already picked up as mastered by the XP fallback above
@@ -1006,23 +1008,71 @@ async function process(file){
           components: [],
         });
       });
-      // Reminder card: modular combos are player-chosen, so there's no fixed
-      // catalog entry to check against. If you don't currently own a single
-      // built example of this type, surface a standing reminder to go build
-      // one — that's the actual actionable "what do I still need to craft"
-      // signal for these categories, rather than tracking one specific combo.
-      if(builtOnes.length===0){
+    });
+
+    // Kitgun Mastery Rank ONLY depends on which Chamber is used — Grip and Loader
+    // don't matter at all (confirmed: primary/secondary variants of a Chamber
+    // share the same mastery progression, and Grip/Loader choice never affects it).
+    // So the real "what do I need to craft" checklist is just: which of the 6
+    // Chambers have I never mastered yet? Same idea for Zaw, but keyed on Strike.
+    const KITGUN_CHAMBERS=[
+      {name:'Catchmoon', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelAPart'},
+      {name:'Tombfinger', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelBPart'},
+      {name:'Rattleguts', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelCPart'},
+      {name:'Gaze', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelDPart'},
+      {name:'Sporelacer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelEgg/InfModularBarrelEggPart'},
+      {name:'Vermisplicer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelBeam/InfModularBarrelBeamPart'},
+    ];
+    const ZAW_STRIKES=[
+      {name:'Balla', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipOne'},
+      {name:'Ooltha', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipTwo'},
+      {name:'Mewan', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipThree'},
+      {name:'Cyath', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipFour'},
+      {name:'Dehtat', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipFive'},
+      {name:'Kronsh', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipSix'},
+      {name:'Sepfahn', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee02/Tip/TipNine'},
+      {name:'Rabvee', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee02/Tip/TipTen'},
+      {name:'Dokrahm', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee02/Tip/TipEleven'},
+      {name:'Plague Kripath', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipOne'},
+      {name:'Plague Keewar', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipTwo'},
+    ];
+    const modularChecklistSpecs=[
+      {parts:KITGUN_CHAMBERS, label:'Kitgun', partLabel:'Chamber', category:'Secondary'},
+      {parts:ZAW_STRIKES, label:'Zaw', partLabel:'Strike', category:'Melee'},
+    ];
+    modularChecklistSpecs.forEach(spec=>{
+      spec.parts.forEach(part=>{
+        if(mastered.has(part.uniqueName)) return; // this Chamber/Strike already gave its mastery
+        if(modularAddressed.has(part.uniqueName)) return; // already covered by a specific owned-build card above
         notMasteredModular.push({
-          uniqueName: `__modular_reminder_${spec.invKey}`,
-          name: `${spec.label} (niciunul construit încă)`,
+          uniqueName: part.uniqueName,
+          name: `${spec.label}: ${spec.partLabel} ${part.name}`,
           category: spec.category,
           craftStatus: 'not_built',
           isModular: true,
-          modularWikiSlug: spec.wikiSlug,
+          modularWikiSlug: part.name,
+          components: [],
+        });
+      });
+    });
+    // MOA companions don't have a confirmed single "mastery part" the way
+    // Kitgun/Zaw do, so keep the simpler "build one" reminder for that case.
+    (function(){
+      const arr = inv.MoaPets||[];
+      const builtOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
+      if(builtOnes.length===0){
+        notMasteredModular.push({
+          uniqueName: '__modular_reminder_MoaPets',
+          name: 'MOA (niciunul construit încă)',
+          category: 'Companion',
+          craftStatus: 'not_built',
+          isModular: true,
+          modularWikiSlug: 'MOA',
           components: [],
         });
       }
-    });
+    })();
+
 
     const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
