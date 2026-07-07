@@ -969,20 +969,15 @@ async function process(file){
       return {...w,category:'Archwing',craftStatus:cs,craftingTs:bpComp?(craftingBPs.get(bpComp.uniqueName)||null):null};
     });
 
-    // TEMP DEBUG — helps confirm the real field name AlecaFrame uses for modular
-    // weapon parts (Kitgun/Zaw/MOA). Check the browser console (F12) after loading
-    // the .dat file and share what appears here.
+    // TEMP DEBUG — scan the FULL arrays (not just index 0/1) for any entry that
+    // has a ModularParts field, and report its mastery/XP status.
     ['Pistols','Melee','MoaPets'].forEach(catKey=>{
       const arr = inv[catKey]||[];
-      if(arr.length){
-        console.log(`[MasteryChecker debug] inv.${catKey}[0] keys:`, Object.keys(arr[0]));
-        console.log(`[MasteryChecker debug] inv.${catKey}[0] full:`, arr[0]);
-        if(arr.length>1){
-          console.log(`[MasteryChecker debug] inv.${catKey}[1] keys:`, Object.keys(arr[1]));
-        }
-      } else {
-        console.log(`[MasteryChecker debug] inv.${catKey} is empty or missing`);
-      }
+      const modularOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
+      console.log(`[MasteryChecker debug] inv.${catKey}: ${arr.length} total, ${modularOnes.length} with ModularParts`);
+      modularOnes.forEach(w=>{
+        console.log(`[MasteryChecker debug]   -> ItemType=${w.ItemType} XP=${w.XP} mastered=${mastered.has(w.ItemType)} ModularParts=`, w.ModularParts);
+      });
     });
 
     // Filter Modular items (Kitguns, Zaws, MOA companions) — these don't exist as
