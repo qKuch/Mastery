@@ -1384,7 +1384,12 @@ function buildMaterials(items, miscItems, ownedItems, pendingBPs, allItems, inPr
   }
 
   for(const item of items){
-    if(item.craftStatus !== 'bp_only' && item.craftStatus !== 'craftable') continue;
+    // Modular checklist items (Kitgun/Zaw/MOA/Amp/K-Drive) use 'not_built' when
+    // the Blueprint isn't owned yet — but that BP is a trivial credits/standing
+    // purchase, unlike a normal item's BP. The actual bottleneck is the raw
+    // resources, so include these in the materials calc even pre-purchase.
+    const includeStatus = item.craftStatus === 'bp_only' || item.craftStatus === 'craftable' || (item.isModular && item.craftStatus === 'not_built');
+    if(!includeStatus) continue;
     const bpComp = (item.components||[]).find(c => c.name === 'Blueprint');
     // Skip items whose main BP is in Foundry (claimable OR in-progress = ingredients consumed)
     if(bpComp && pendingBPs && (pendingBPs.has(bpComp.uniqueName) || (inProgressBPs && inProgressBPs.has(bpComp.uniqueName)))) continue;
