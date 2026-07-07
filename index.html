@@ -643,6 +643,8 @@ function buildCard(w){
   const cs=w.craftStatus;
   d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':cs==='bp_only'?' partial':'');
   const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
+  const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
+  let craftTag='';
   if(cs==='claimable') craftTag=`<span class="craft-tag tag-claim">⬇ De luat din Foundry</span>`;
   else if(cs==='owned') craftTag=`<span class="craft-tag tag-owned">🎒 În inventar</span>`;
   else if(cs==='craftable') craftTag=`<span class="craft-tag tag-craft">🔨 Se poate crafta</span>`;
