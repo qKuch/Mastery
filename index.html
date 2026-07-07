@@ -300,6 +300,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
         <button class="fb" data-cat="Zaw">Zaw</button>
         <button class="fb" data-cat="MOA">MOA</button>
         <button class="fb" data-cat="K-Drive">K-Drive</button>
+        <button class="fb" data-cat="Amp">Amp</button>
       </div>
       <div class="toolbar" style="margin-top:-.3rem">
         <button class="fs" data-status="claimable">⬇ De luat</button>
@@ -552,10 +553,11 @@ function badgeClass(cat){
   if(cat==='Zaw')return 'bm';
   if(cat==='MOA')return 'bo';
   if(cat==='K-Drive')return 'bw';
+  if(cat==='Amp')return 'ba';
   return 'bo';
 }
 function badgeLabel(cat){
-  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing','Kitgun':'Kitgun','Zaw':'Zaw','MOA':'MOA','K-Drive':'K-Drive'};
+  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing','Kitgun':'Kitgun','Zaw':'Zaw','MOA':'MOA','K-Drive':'K-Drive','Amp':'Amp'};
   return m[cat]||cat||'Altul';
 }
 
@@ -1100,10 +1102,23 @@ async function process(file){
       {name:'Oloro', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadOloro', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadOloroBlueprint'},
       {name:'Nychus', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadMelee', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadMeleeBlueprint'},
     ];
+    // Amp: Mastery Rank depends ONLY on the Prism (Scaffold/Brace never matter).
+    // 7 regular Prisms + Mote Amp (starter, always usable) + Sirocco (bought
+    // pre-gilded from Cephalon Simaris) = 9 total mastery-granting things.
+    const AMP_PRISMS=[
+      {name:'Raplak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartA'},
+      {name:'Shwaak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartB'},
+      {name:'Granmu', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartC'},
+      {name:'Rahn', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set2/Barrel/SentAmpSet2BarrelPartA'},
+      {name:'Cantic', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartA'},
+      {name:'Lega', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartB'},
+      {name:'Klamora', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartC'},
+    ];
     const modularChecklistSpecs=[
       {parts:KITGUN_CHAMBERS, label:'Kitgun', partLabel:'Chamber', category:'Kitgun'},
       {parts:ZAW_STRIKES, label:'Zaw', partLabel:'Strike', category:'Zaw'},
       {parts:MOA_MODELS, label:'MOA', partLabel:'Model', category:'MOA'},
+      {parts:AMP_PRISMS, label:'Amp', partLabel:'Prism', category:'Amp'},
     ];
     modularChecklistSpecs.forEach(spec=>{
       spec.parts.forEach(part=>{
@@ -1130,10 +1145,31 @@ async function process(file){
       });
     });
 
+    // Mote Amp and Sirocco also grant mastery but aren't built from a Prism —
+    // Mote Amp is given free by the Quills, Sirocco is bought pre-gilded from
+    // Cephalon Simaris. No Blueprint check needed; just whether it's mastered.
+    const specialAmps=[
+      {name:'Mote Amp', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/SentTrainingAmplifier/SentAmpTrainingBarrel'},
+      {name:'Sirocco', uniqueName:'/Lotus/Weapons/Operator/Pistols/DrifterPistol/DrifterPistolPlayerWeapon'},
+    ];
+    specialAmps.forEach(part=>{
+      if(mastered.has(part.uniqueName)) return;
+      if(modularAddressed.has(part.uniqueName)) return;
+      notMasteredModular.push({
+        uniqueName: part.uniqueName,
+        name: `Amp: ${part.name}`,
+        category: 'Amp',
+        craftStatus: 'not_built',
+        isModular: true,
+        modularWikiSlug: part.name,
+        components: [],
+      });
+    });
+
 
     const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
-    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7,'Kitgun':8,'Zaw':9,'MOA':10,'K-Drive':11};
+    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7,'Kitgun':8,'Zaw':9,'MOA':10,'K-Drive':11,'Amp':12};
     const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3,not_built:4};
     notMastered.sort((a,b)=>{
       const sa=statusOrder[a.craftStatus]??4, sb=statusOrder[b.craftStatus]??4;
@@ -1182,9 +1218,9 @@ async function process(file){
     const craftCount=notMastered.filter(w=>w.craftStatus==='craftable').length;
     const bpCount=notMastered.filter(w=>w.craftStatus==='bp_only').length;
 
-    const cats={Primary:0,Secondary:0,Melee:0,'Arch-Gun':0,'Arch-Melee':0,Archwing:0,Companion:0,Warframes:0,Kitgun:0,Zaw:0,MOA:0};
+    const cats={Primary:0,Secondary:0,Melee:0,'Arch-Gun':0,'Arch-Melee':0,Archwing:0,Companion:0,Warframes:0,Kitgun:0,Zaw:0,MOA:0,'K-Drive':0,Amp:0};
     notMastered.forEach(w=>{if(cats[w.category]!==undefined)cats[w.category]++});
-    const labels={Primary:'Primare',Secondary:'Secundare',Melee:'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee',Archwing:'Archwing',Companion:'Companion',Warframes:'Warframes',Kitgun:'Kitgun',Zaw:'Zaw',MOA:'MOA'};
+    const labels={Primary:'Primare',Secondary:'Secundare',Melee:'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee',Archwing:'Archwing',Companion:'Companion',Warframes:'Warframes',Kitgun:'Kitgun',Zaw:'Zaw',MOA:'MOA','K-Drive':'K-Drive',Amp:'Amp'};
 
     document.getElementById('stats').innerHTML=
       `<div class="sbox"><div class="snum">${notMastered.length}</div><div class="slbl">Total</div></div>`+
