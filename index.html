@@ -296,6 +296,9 @@ select.fb:focus{outline:none;border-color:#c8a84b}
         <button class="fb" data-cat="Companion">Companion</button>
         <button class="fb" data-cat="Warframes">Warframes</button>
         <button class="fb" data-cat="Archwing">Archwing</button>
+        <button class="fb" data-cat="Kitgun">Kitgun</button>
+        <button class="fb" data-cat="Zaw">Zaw</button>
+        <button class="fb" data-cat="MOA">MOA</button>
       </div>
       <div class="toolbar" style="margin-top:-.3rem">
         <button class="fs" data-status="claimable">⬇ De luat</button>
@@ -544,10 +547,13 @@ function badgeClass(cat){
   if(cat&&cat.startsWith('Arch'))return 'ba';
   if(cat==='Archwing') return 'ba';
   if(cat==='Warframes')return 'bw';
+  if(cat==='Kitgun')return 'bs';
+  if(cat==='Zaw')return 'bm';
+  if(cat==='MOA')return 'bo';
   return 'bo';
 }
 function badgeLabel(cat){
-  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing'};
+  const m={'Primary':'Primară','Secondary':'Secundară','Melee':'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee','Companion':'Companion','Warframes':'Warframe','Archwing':'Archwing','Kitgun':'Kitgun','Zaw':'Zaw','MOA':'MOA'};
   return m[cat]||cat||'Altul';
 }
 
@@ -564,6 +570,36 @@ function showPopup(w, anchorEl){
   const body = document.getElementById('popup-body');
 
   title.textContent = w.name;
+
+  if(w.isModular && w.modularBpPath){
+    const have = w.modularBpCount || 0;
+    const ok = have > 0;
+    body.innerHTML = `<div class="comp-row ${ok?'row-ok':'row-miss'}">
+      <span class="comp-icon ${ok?'qty-ok':'qty-miss'}">${ok?'✓':'✕'}</span>
+      <span class="comp-name">Blueprint</span>
+      <span class="comp-qty ${ok?'qty-ok':'qty-miss'}">${have} BP</span>
+      <span class="comp-status ${ok?'status-ok':'status-miss'}">${ok?'Deja în inventar':'Trebuie cumpărat'}</span>
+    </div>`;
+    popup.style.top = '-9999px';
+    popup.style.left = '-9999px';
+    popup.classList.add('show');
+    requestAnimationFrame(()=>{
+      const rect = anchorEl.getBoundingClientRect();
+      const popupW = popup.offsetWidth || 320;
+      const popupH = popup.offsetHeight || 120;
+      let left = rect.left;
+      if(left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+      if(left < 8) left = 8;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      let top = (spaceBelow >= popupH + 6 || spaceBelow >= spaceAbove) ? rect.bottom + 6 : rect.top - popupH - 6;
+      if(top < 8) top = 8;
+      if(top + popupH > window.innerHeight - 8) top = window.innerHeight - popupH - 8;
+      popup.style.top = top + 'px';
+      popup.style.left = left + 'px';
+    });
+    return;
+  }
 
   const comps = (w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName);
   if(comps.length===0){
@@ -650,7 +686,7 @@ function buildCard(w){
   else if(cs==='craftable') craftTag=`<span class="craft-tag tag-craft">🔨 Se poate crafta</span>`;
   else if(cs==='bp_only') craftTag=`<span class="craft-tag tag-bp">📦 BP deținut</span>`;
   else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
-  const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
+  const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0 || (w.isModular && w.modularBpPath);
   const infoBtn=(cs&&hasComps)?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
   d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
   <div class="wcard-footer">
@@ -981,12 +1017,12 @@ async function process(file){
       return seg.replace(/([a-z0-9])([A-Z])/g,'$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g,'$1 $2');
     };
     const modularSpecs=[
-      {invKey:'Pistols', label:'Kitgun', category:'Secondary', capXP:450000, wikiSlug:'Kitgun'},
-      {invKey:'Melee', label:'Zaw', category:'Melee', capXP:450000, wikiSlug:'Zaw'},
-      {invKey:'MoaPets', label:'MOA', category:'Companion', capXP:900000, wikiSlug:'MOA'},
+      {invKey:'Pistols', label:'Kitgun', category:'Kitgun', capXP:450000, wikiSlug:'Kitgun'},
+      {invKey:'Melee', label:'Zaw', category:'Zaw', capXP:450000, wikiSlug:'Zaw'},
+      {invKey:'MoaPets', label:'MOA', category:'MOA', capXP:900000, wikiSlug:'MOA'},
     ];
     const notMasteredModular=[];
-    const modularAddressed=new Set(); // chamber/strike uniqueNames already mastered OR in an owned build
+    const modularAddressed=new Set(); // chamber/strike/model uniqueNames already mastered OR in an owned build
     modularSpecs.forEach(spec=>{
       const arr = inv[spec.invKey]||[];
       const builtOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
@@ -1013,8 +1049,9 @@ async function process(file){
     // Kitgun Mastery Rank ONLY depends on which Chamber is used — Grip and Loader
     // don't matter at all (confirmed: primary/secondary variants of a Chamber
     // share the same mastery progression, and Grip/Loader choice never affects it).
-    // So the real "what do I need to craft" checklist is just: which of the 6
-    // Chambers have I never mastered yet? Same idea for Zaw, but keyed on Strike.
+    // Zaw is the same but keyed on Strike, and MOA the same but keyed on Model.
+    // So the real "what do I need to craft" checklist is just: which of these
+    // have I never mastered yet — and separately, do I already own the Blueprint?
     const KITGUN_CHAMBERS=[
       {name:'Catchmoon', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelAPart'},
       {name:'Tombfinger', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelBPart'},
@@ -1036,47 +1073,49 @@ async function process(file){
       {name:'Plague Kripath', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipOne'},
       {name:'Plague Keewar', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipTwo'},
     ];
+    // MOA: Nychus uses an irregular internal name (MoaPetHeadMelee) unlike the
+    // other 3 Models — confirmed via game data exports. Its exact Blueprint path
+    // is inferred by pattern (not independently verified) and marked below.
+    const MOA_MODELS=[
+      {name:'Para', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadPara', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadParaBlueprint'},
+      {name:'Lambeo', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadLambeo', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadLambeoBlueprint'},
+      {name:'Oloro', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadOloro', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadOloroBlueprint'},
+      {name:'Nychus', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadMelee', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadMeleeBlueprint'},
+    ];
     const modularChecklistSpecs=[
-      {parts:KITGUN_CHAMBERS, label:'Kitgun', partLabel:'Chamber', category:'Secondary'},
-      {parts:ZAW_STRIKES, label:'Zaw', partLabel:'Strike', category:'Melee'},
+      {parts:KITGUN_CHAMBERS, label:'Kitgun', partLabel:'Chamber', category:'Kitgun'},
+      {parts:ZAW_STRIKES, label:'Zaw', partLabel:'Strike', category:'Zaw'},
+      {parts:MOA_MODELS, label:'MOA', partLabel:'Model', category:'MOA'},
     ];
     modularChecklistSpecs.forEach(spec=>{
       spec.parts.forEach(part=>{
-        if(mastered.has(part.uniqueName)) return; // this Chamber/Strike already gave its mastery
+        if(mastered.has(part.uniqueName)) return; // this Chamber/Strike/Model already gave its mastery
         if(modularAddressed.has(part.uniqueName)) return; // already covered by a specific owned-build card above
+        // Blueprint path: for Kitgun/Zaw it's simply "<part path>Blueprint" (confirmed
+        // for Zaw directly from the item catalog; assumed for Kitgun by the same
+        // established convention). MOA uses its own explicit bpUniqueName instead,
+        // since its Blueprint lives under a completely different path prefix.
+        const bpPath = part.bpUniqueName || (part.uniqueName + 'Blueprint');
+        const bpCount = ownedBPsCount.get(bpPath) || 0;
+        const hasBp = bpCount > 0;
         notMasteredModular.push({
           uniqueName: part.uniqueName,
           name: `${spec.label}: ${spec.partLabel} ${part.name}`,
           category: spec.category,
-          craftStatus: 'not_built',
+          craftStatus: hasBp ? 'bp_only' : 'not_built',
           isModular: true,
           modularWikiSlug: part.name,
+          modularBpPath: bpPath,
+          modularBpCount: bpCount,
           components: [],
         });
       });
     });
-    // MOA companions don't have a confirmed single "mastery part" the way
-    // Kitgun/Zaw do, so keep the simpler "build one" reminder for that case.
-    (function(){
-      const arr = inv.MoaPets||[];
-      const builtOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
-      if(builtOnes.length===0){
-        notMasteredModular.push({
-          uniqueName: '__modular_reminder_MoaPets',
-          name: 'MOA (niciunul construit încă)',
-          category: 'Companion',
-          craftStatus: 'not_built',
-          isModular: true,
-          modularWikiSlug: 'MOA',
-          components: [],
-        });
-      }
-    })();
 
 
     const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
-    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7};
+    const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7,'Kitgun':8,'Zaw':9,'MOA':10};
     const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3,not_built:4};
     notMastered.sort((a,b)=>{
       const sa=statusOrder[a.craftStatus]??4, sb=statusOrder[b.craftStatus]??4;
@@ -1125,9 +1164,9 @@ async function process(file){
     const craftCount=notMastered.filter(w=>w.craftStatus==='craftable').length;
     const bpCount=notMastered.filter(w=>w.craftStatus==='bp_only').length;
 
-    const cats={Primary:0,Secondary:0,Melee:0,'Arch-Gun':0,'Arch-Melee':0,Archwing:0,Companion:0,Warframes:0};
+    const cats={Primary:0,Secondary:0,Melee:0,'Arch-Gun':0,'Arch-Melee':0,Archwing:0,Companion:0,Warframes:0,Kitgun:0,Zaw:0,MOA:0};
     notMastered.forEach(w=>{if(cats[w.category]!==undefined)cats[w.category]++});
-    const labels={Primary:'Primare',Secondary:'Secundare',Melee:'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee',Archwing:'Archwing',Companion:'Companion',Warframes:'Warframes'};
+    const labels={Primary:'Primare',Secondary:'Secundare',Melee:'Melee','Arch-Gun':'Arch-Gun','Arch-Melee':'Arch-Melee',Archwing:'Archwing',Companion:'Companion',Warframes:'Warframes',Kitgun:'Kitgun',Zaw:'Zaw',MOA:'MOA'};
 
     document.getElementById('stats').innerHTML=
       `<div class="sbox"><div class="snum">${notMastered.length}</div><div class="slbl">Total</div></div>`+
