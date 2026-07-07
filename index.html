@@ -578,12 +578,23 @@ function showPopup(w, anchorEl){
   if(w.isModular && w.modularBpPath){
     const have = w.modularBpCount || 0;
     const ok = have > 0;
-    body.innerHTML = `<div class="comp-row ${ok?'row-ok':'row-miss'}">
+    const bpRow = `<div class="comp-row ${ok?'row-ok':'row-miss'}">
       <span class="comp-icon ${ok?'qty-ok':'qty-miss'}">${ok?'✓':'✕'}</span>
       <span class="comp-name">Blueprint</span>
       <span class="comp-qty ${ok?'qty-ok':'qty-miss'}">${have} BP</span>
       <span class="comp-status ${ok?'status-ok':'status-miss'}">${ok?'Deja în inventar':'Trebuie cumpărat'}</span>
     </div>`;
+    const matRows = (w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).map(c=>{
+      const matHave = miscItemsGlobal.get(c.uniqueName) || 0;
+      const matNeed = c.itemCount || 1;
+      const matOk = matHave >= matNeed;
+      return `<div class="comp-row ${matOk?'row-ok':'row-miss'}">
+        <span class="comp-icon ${matOk?'qty-ok':'qty-miss'}">${matOk?'✓':'✕'}</span>
+        <span class="comp-name">${c.name}</span>
+        <span class="comp-qty ${matOk?'qty-ok':'qty-miss'}">${matHave}/${matNeed}</span>
+      </div>`;
+    }).join('');
+    body.innerHTML = bpRow + matRows;
     popup.style.top = '-9999px';
     popup.style.left = '-9999px';
     popup.classList.add('show');
@@ -1030,7 +1041,7 @@ async function process(file){
     // fixed entries in the static item catalog (each one is built from player-chosen
     // parts), so we detect them directly from the save data's ModularParts field
     // instead of the __allItems list used for every other category above.
-    const itemNameByUniqueName = new Map(__allItems.map(w=>[w.uniqueName, w.name]));
+    const itemByUniqueName = new Map(__allItems.map(w=>[w.uniqueName, w]));
     const humanizePart = u => {
       if(!u) return '';
       const seg = u.split('/').pop();
@@ -1052,7 +1063,7 @@ async function process(file){
         if(mastered.has(w.ItemType)) return;
         const xp=w.XP||0;
         if(xp>=spec.capXP) return; // already picked up as mastered by the XP fallback above
-        const partNames=w.ModularParts.map(p=>itemNameByUniqueName.get(p)||humanizePart(p)).filter(Boolean);
+        const partNames=w.ModularParts.map(p=>(itemByUniqueName.get(p)||{}).name||humanizePart(p)).filter(Boolean);
         const label=partNames.length ? `${spec.label}: ${partNames.join(' + ')}` : `${spec.label} (necunoscut)`;
         notMasteredModular.push({
           uniqueName: w.ItemType,
@@ -1073,12 +1084,37 @@ async function process(file){
     // So the real "what do I need to craft" checklist is just: which of these
     // have I never mastered yet — and separately, do I already own the Blueprint?
     const KITGUN_CHAMBERS=[
-      {name:'Catchmoon', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelAPart'},
-      {name:'Tombfinger', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelBPart'},
-      {name:'Rattleguts', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelCPart'},
-      {name:'Gaze', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelDPart'},
-      {name:'Sporelacer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelEgg/InfModularBarrelEggPart'},
-      {name:'Vermisplicer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelBeam/InfModularBarrelBeamPart'},
+      {name:'Catchmoon', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelAPart', realComponents:[{name:'Alloy Plate',uniqueName:'/Lotus/Types/Items/MiscItems/AlloyPlate',itemCount:1700},{name:'Blueprint',uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelAPartBlueprint',itemCount:1},{name:'Mytocardia Spore',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/FungusHeartItem',itemCount:15},{name:'Scrubber Exa Brain',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishExaBrainItem',itemCount:10},{name:'Travocyte Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonOreAAlloyItem',itemCount:20}]},
+      {name:'Tombfinger', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelBPart', realComponents:[{name:'Axidrol Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonOreBAlloyItem',itemCount:20},{name:'Blueprint',uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelBPartBlueprint',itemCount:1},{name:'Circuits',uniqueName:'/Lotus/Types/Items/MiscItems/Circuits',itemCount:900},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:15},{name:'Tink Dissipator Coil',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/SolarisFishDissipatorCoilItem',itemCount:10}]},
+      {name:'Rattleguts', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelCPart', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelCPartBlueprint',itemCount:1},{name:'Eye-Eye Rotoblade',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishRotobladeItem',itemCount:10},{name:'Gorgaricus Spore',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/VenusCoconutItem',itemCount:15},{name:'Rubedo',uniqueName:'/Lotus/Types/Items/MiscItems/Rubedo',itemCount:900},{name:'Venerdo Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonOreAAlloyItem',itemCount:20}]},
+      {name:'Gaze', uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelDPart', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/SolarisUnited/Secondary/SUModularSecondarySet1/Barrel/SUModularSecondaryBarrelDPartBlueprint',itemCount:1},{name:'Cryotic',uniqueName:'/Lotus/Types/Items/MiscItems/Cryotic',itemCount:1200},{name:'Kriller Thermal Laser',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishThermalLaserItem',itemCount:40},{name:'Tepa Nodule',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/VenusTreeItem',itemCount:15},{name:'Venerdo Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonOreAAlloyItem',itemCount:40}]},
+      {name:'Sporelacer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelEgg/InfModularBarrelEggPart', realComponents:[{name:'Adramal Alloy',uniqueName:'/Lotus/Types/Items/Gems/Deimos/DeimosCommonOreAAlloyItem',itemCount:20},{name:'Benign Infested Tumor',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosGenericSharedFishPartItem',itemCount:25},{name:'Blueprint',uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelEgg/InfModularBarrelEggBlueprint',itemCount:1},{name:'Pustulite',uniqueName:'/Lotus/Types/Gameplay/InfestedMicroplanet/Resources/InfGorgaricusSeedItem',itemCount:15},{name:'Sporulate Sac',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosInfestedFishEPartItem',itemCount:10}]},
+      {name:'Vermisplicer', uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelBeam/InfModularBarrelBeamPart', realComponents:[{name:'Benign Infested Tumor',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosGenericSharedFishPartItem',itemCount:25},{name:'Blueprint',uniqueName:'/Lotus/Weapons/Infested/Pistols/InfKitGun/Barrels/InfBarrelBeam/InfModularBarrelBeamBlueprint',itemCount:1},{name:'Dendrite Blastoma',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosInfestedFishBPartItem',itemCount:10},{name:'Ganglion',uniqueName:'/Lotus/Types/Gameplay/InfestedMicroplanet/Resources/InfMapricoFruitItem',itemCount:15},{name:'Tempered Bapholite',uniqueName:'/Lotus/Types/Items/Gems/Deimos/DeimosCommonOreBAlloyItem',itemCount:20}]},
+    ];
+
+    const MOA_MODELS=[
+      {name:'Para', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadPara', realComponents:[{name:'Axidrol Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonOreBAlloyItem',itemCount:30},{name:'Blueprint',uniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadParaBlueprint',itemCount:1},{name:'Morphics',uniqueName:'/Lotus/Types/Items/MiscItems/Morphic',itemCount:2},{name:'Mytocardia Spore',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/FungusHeartItem',itemCount:20},{name:'Smooth Phasmin',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonGemACutItem',itemCount:10}]},
+      {name:'Lambeo', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadLambeo', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadLambeoBlueprint',itemCount:1},{name:'Gorgaricus Spore',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/VenusCoconutItem',itemCount:20},{name:'Heart Noctrul',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonGemBCutItem',itemCount:10},{name:'Morphics',uniqueName:'/Lotus/Types/Items/MiscItems/Morphic',itemCount:2},{name:'Venerdo Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonOreAAlloyItem',itemCount:30}]},
+      {name:'Oloro', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadOloro', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadOloroBlueprint',itemCount:1},{name:'Goblite Tears',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonGemACutItem',itemCount:10},{name:'Morphics',uniqueName:'/Lotus/Types/Items/MiscItems/Morphic',itemCount:2},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:20},{name:'Travocyte Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonOreAAlloyItem',itemCount:30}]},
+      {name:'Nychus', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadMelee', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadMeleeBlueprint',itemCount:1},{name:'Goblite Tears',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonGemACutItem',itemCount:10},{name:'Gorgaricus Spore',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/VenusCoconutItem',itemCount:20},{name:'Morphics',uniqueName:'/Lotus/Types/Items/MiscItems/Morphic',itemCount:2},{name:'Venerdo Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonOreAAlloyItem',itemCount:20}]},
+    ];
+
+    const AMP_PRISMS=[
+      {name:'Raplak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartA', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartABlueprint',itemCount:1},{name:'Esher Devar',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/CommonGemBCutAItem',itemCount:10},{name:'Iradite',uniqueName:'/Lotus/Types/Gameplay/Eidolon/Resources/IraditeItem',itemCount:40},{name:'Murkray Liver',uniqueName:'/Lotus/Types/Items/Fish/Eidolon/FishParts/BothRareFishAPartItem',itemCount:2},{name:'Tear Azurite',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/CommonGemACutAItem',itemCount:10}]},
+      {name:'Shwaak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartB', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartBBlueprint',itemCount:1},{name:'Esher Devar',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/CommonGemBCutAItem',itemCount:15},{name:'Iradite',uniqueName:'/Lotus/Types/Gameplay/Eidolon/Resources/IraditeItem',itemCount:60},{name:'Marquise Veridos',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/UncommonGemACutAItem',itemCount:10},{name:'Norg Brain',uniqueName:'/Lotus/Types/Items/Fish/Eidolon/FishParts/NightRareFishAPartItem',itemCount:2}]},
+      {name:'Granmu', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartC', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartCBlueprint',itemCount:1},{name:'Breath Of The Eidolon',uniqueName:'/Lotus/Types/Items/MiscItems/Eidolonium',itemCount:3},{name:'Cuthol Tendrils',uniqueName:'/Lotus/Types/Items/Fish/Eidolon/FishParts/NightRareFishBPartItem',itemCount:2},{name:'Marquise Veridos',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/UncommonGemACutAItem',itemCount:10},{name:'Star Crimzian',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/RareGemACutAItem',itemCount:6}]},
+      {name:'Rahn', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set2/Barrel/SentAmpSet2BarrelPartA', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set2/Barrel/SentAmpSet2BarrelPartABlueprint',itemCount:1},{name:'Esher Devar',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/CommonGemBCutAItem',itemCount:15},{name:'Iradite',uniqueName:'/Lotus/Types/Gameplay/Eidolon/Resources/IraditeItem',itemCount:50},{name:'Seram Beetle Shell',uniqueName:'/Lotus/Types/Items/Fish/Eidolon/FishParts/NightLegendaryFishAPartItem',itemCount:2},{name:'Tear Azurite',uniqueName:'/Lotus/Types/Items/Gems/Eidolon/CommonGemACutAItem',itemCount:20}]},
+      {name:'Cantic', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartA', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartABlueprint',itemCount:1},{name:'Gyromag Systems',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem',itemCount:3},{name:'Longwinder Lathe Coagulant',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/SolarisFishLatheCoogulantItem',itemCount:6},{name:'Radiant Zodian',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisEidolonGemACutItem',itemCount:3},{name:'Vega Toroid',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/ArachnoidMicroidItem',itemCount:3}]},
+      {name:'Lega', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartB', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartBBlueprint',itemCount:1},{name:'Charamote Sagan Module',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/OrokinFishSaganModuleItem',itemCount:6},{name:'Gyromag Systems',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem',itemCount:3},{name:'Radiant Zodian',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisEidolonGemACutItem',itemCount:3},{name:'Vega Toroid',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/ArachnoidMicroidItem',itemCount:3}]},
+      {name:'Klamora', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartC', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartCBlueprint',itemCount:1},{name:'Gyromag Systems',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem',itemCount:3},{name:'Radiant Zodian',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisEidolonGemACutItem',itemCount:3},{name:'Tromyzon Entroplasma',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/OrokinFishEntroplasmaItem',itemCount:6},{name:'Vega Toroid',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/ArachnoidMicroidItem',itemCount:3}]},
+    ];
+
+    const KDRIVE_BOARDS=[
+      {name:'Feverspine', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardInfestedB/HoverboardInfestedBDeck', realComponents:[{name:'Adramal Alloy',uniqueName:'/Lotus/Types/Items/Gems/Deimos/DeimosCommonOreAAlloyItem',itemCount:40},{name:'Benign Infested Tumor',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosGenericSharedFishPartItem',itemCount:50},{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardInfestedB/HoverboardInfestedBDeckBlueprint',itemCount:1},{name:'Ganglion',uniqueName:'/Lotus/Types/Gameplay/InfestedMicroplanet/Resources/InfMapricoFruitItem',itemCount:25},{name:'Parasitic Tethermaw',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosInfestedFishGPartItem',itemCount:15}]},
+      {name:'Bad Baby', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardSolarisA/HoverboardSolarisADeck', realComponents:[{name:'Axidrol Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisCommonOreBAlloyItem',itemCount:40},{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardSolarisA/HoverboardSolarisADeckBlueprint',itemCount:1},{name:'Mirewinder Parallel Biode',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishParralelBiodeItem',itemCount:10},{name:'Scrap',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/GenericFishScrapItem',itemCount:30},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:20}]},
+      {name:'Flatbelly', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusA/HoverboardCorpusADeck', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusA/HoverboardCorpusADeckBlueprint',itemCount:1},{name:'Recaster Neural Relay',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/SolarisFishNeuralRelayItem',itemCount:10},{name:'Scrap',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/GenericFishScrapItem',itemCount:50},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:20},{name:'Venerdo Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisUncommonOreAAlloyItem',itemCount:40}]},
+      {name:'Needlenose', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusB/HoverboardCorpusBDeck', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusB/HoverboardCorpusBDeckBlueprint',itemCount:1},{name:'Eye-Eye Rotoblade',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishRotobladeItem',itemCount:10},{name:'Hespazym Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisRareOreAAlloyItem',itemCount:40},{name:'Scrap',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/GenericFishScrapItem',itemCount:40},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:20}]},
+      {name:'Runway', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusC/HoverboardCorpusCDeck', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardCorpusC/HoverboardCorpusCDeckBlueprint',itemCount:1},{name:'Hespazym Alloy',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisRareOreAAlloyItem',itemCount:40},{name:'Kriller Thermal Laser',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/CorpusFishThermalLaserItem',itemCount:10},{name:'Scrap',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/GenericFishScrapItem',itemCount:40},{name:'Thermal Sludge',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CoolantItem',itemCount:20}]},
     ];
     const ZAW_STRIKES=[
       {name:'Balla', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMelee01/Tip/TipOne'},
@@ -1093,44 +1129,34 @@ async function process(file){
       {name:'Plague Kripath', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipOne'},
       {name:'Plague Keewar', uniqueName:'/Lotus/Weapons/Ostron/Melee/ModularMeleeInfested/Tips/InfestedTipTwo'},
     ];
-    // MOA: Nychus uses an irregular internal name (MoaPetHeadMelee) unlike the
-    // other 3 Models — confirmed via game data exports. Its exact Blueprint path
-    // is inferred by pattern (not independently verified) and marked below.
-    const MOA_MODELS=[
-      {name:'Para', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadPara', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadParaBlueprint'},
-      {name:'Lambeo', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadLambeo', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadLambeoBlueprint'},
-      {name:'Oloro', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadOloro', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadOloroBlueprint'},
-      {name:'Nychus', uniqueName:'/Lotus/Types/Friendly/Pets/MoaPets/MoaPetParts/MoaPetHeadMelee', bpUniqueName:'/Lotus/Types/Recipes/MoaPetParts/MoaPetHeadMeleeBlueprint'},
-    ];
-    // Amp: Mastery Rank depends ONLY on the Prism (Scaffold/Brace never matter).
-    // 7 regular Prisms + Mote Amp (starter, always usable) + Sirocco (bought
-    // pre-gilded from Cephalon Simaris) = 9 total mastery-granting things.
-    const AMP_PRISMS=[
-      {name:'Raplak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartA'},
-      {name:'Shwaak', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartB'},
-      {name:'Granmu', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set1/Barrel/SentAmpSet1BarrelPartC'},
-      {name:'Rahn', uniqueName:'/Lotus/Weapons/Sentients/OperatorAmplifiers/Set2/Barrel/SentAmpSet2BarrelPartA'},
-      {name:'Cantic', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartA'},
-      {name:'Lega', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartB'},
-      {name:'Klamora', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartC'},
-    ];
     const modularChecklistSpecs=[
       {parts:KITGUN_CHAMBERS, label:'Kitgun', partLabel:'Chamber', category:'Kitgun'},
       {parts:ZAW_STRIKES, label:'Zaw', partLabel:'Strike', category:'Zaw'},
       {parts:MOA_MODELS, label:'MOA', partLabel:'Model', category:'MOA'},
       {parts:AMP_PRISMS, label:'Amp', partLabel:'Prism', category:'Amp'},
+      {parts:KDRIVE_BOARDS, label:'K-Drive', partLabel:'Board', category:'K-Drive'},
     ];
     modularChecklistSpecs.forEach(spec=>{
       spec.parts.forEach(part=>{
         if(mastered.has(part.uniqueName)) return; // this Chamber/Strike/Model already gave its mastery
         if(modularAddressed.has(part.uniqueName)) return; // already covered by a specific owned-build card above
-        // Blueprint path: for Kitgun/Zaw it's simply "<part path>Blueprint" (confirmed
-        // for Zaw directly from the item catalog; assumed for Kitgun by the same
-        // established convention). MOA uses its own explicit bpUniqueName instead,
-        // since its Blueprint lives under a completely different path prefix.
-        const bpPath = part.bpUniqueName || (part.uniqueName + 'Blueprint');
+        // Blueprint path: prefer the exact one from realComponents (its "Blueprint"
+        // entry, confirmed via WFCD's item database) — most accurate, especially for
+        // MOA where the Blueprint lives under a totally different path prefix than
+        // the built part. Fall back to the old heuristics for Zaw (no realComponents,
+        // uses the catalog instead) or anything unexpected.
+        const bpFromComponents = part.realComponents && part.realComponents.find(c=>c.name==='Blueprint');
+        const bpPath = (bpFromComponents && bpFromComponents.uniqueName) || part.bpUniqueName || (part.uniqueName + 'Blueprint');
         const bpCount = ownedBPsCount.get(bpPath) || 0;
         const hasBp = bpCount > 0;
+        // If this part exists in the static catalog (true for Zaw Strikes, since
+        // they're regular Melee items there), use its real components/resource
+        // list so the Materials tab can compute what's still needed to build it.
+        // Prefer hardcoded, verified components (Kitgun/MOA/Amp/K-Drive — confirmed
+        // against WFCD's item database). Zaw doesn't need this: it's already in the
+        // static catalog (__allItems) with full real components, so fall back to that.
+        const catalogItem = itemByUniqueName.get(part.uniqueName);
+        const realComponents = part.realComponents || (catalogItem ? (catalogItem.components || []) : []);
         notMasteredModular.push({
           uniqueName: part.uniqueName,
           name: `${spec.label}: ${spec.partLabel} ${part.name}`,
@@ -1140,7 +1166,7 @@ async function process(file){
           modularWikiSlug: part.name,
           modularBpPath: bpPath,
           modularBpCount: bpCount,
-          components: [],
+          components: realComponents,
         });
       });
     });
