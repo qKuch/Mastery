@@ -833,13 +833,23 @@ async function process(file){
       (inv[cat]||[]).forEach(w=>{ if(!mastered.has(w.ItemType) && (w.XP||0) >= 450000) mastered.add(w.ItemType); });
     });
 
-    // Owned blueprints — set for fast lookup, map for counts
-    const ownedBPs=new Set((inv.Recipes||[]).map(r=>r.ItemType));
+    // Owned blueprints — set for fast lookup, map for counts.
+    // NOTE: AlecaFrame can retain a stale ItemCount:0 row after a blueprint is
+    // fully consumed by the Foundry. A naive `r.ItemCount || 1` would wrongly
+    // treat that as "you own 1" (0 is falsy in JS) — guard against that explicitly.
     const ownedBPsCount=new Map();
-    (inv.Recipes||[]).forEach(r=>{ ownedBPsCount.set(r.ItemType,(ownedBPsCount.get(r.ItemType)||0)+(r.ItemCount||1)); });
+    (inv.Recipes||[]).forEach(r=>{
+      const cnt = (r.ItemCount === undefined || r.ItemCount === null) ? 1 : r.ItemCount;
+      if (cnt > 0) ownedBPsCount.set(r.ItemType, (ownedBPsCount.get(r.ItemType)||0) + cnt);
+    });
+    const ownedBPs = new Set(ownedBPsCount.keys());
 
-    // MiscItems as map: uniqueName -> count
-    const miscItems=new Map((inv.MiscItems||[]).map(m=>[m.ItemType, m.ItemCount]));
+    // MiscItems as map: uniqueName -> count (same zero-count guard as above)
+    const miscItems=new Map();
+    (inv.MiscItems||[]).forEach(m=>{
+      const cnt = (m.ItemCount === undefined || m.ItemCount === null) ? 1 : m.ItemCount;
+      if (cnt > 0) miscItems.set(m.ItemType, (miscItems.get(m.ItemType)||0) + cnt);
+    });
 
     miscItemsGlobal = miscItems;
     ownedBPsGlobal = ownedBPs;
@@ -2135,21 +2145,37 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
   title.textContent = w.name;
 
   const allComps = mainBp ? [mainBp, ...craftableComps] : craftableComps;
+  const reserved = w.sellReasonClass === 'reason-claimable' || w.sellReasonClass === 'reason-crafting';
 
-  body.innerHTML = allComps.map(c => {
-    const bpCount = c.name === 'Blueprint'
+  const rows = allComps.map(c => {
+    const isMainBp = c.name === 'Blueprint';
+    const raw = isMainBp
       ? (ownedBPsCountGlobal.get(c.uniqueName) || 0)
-      : getCompBPCount(c, ownedBPsCountGlobal, miscItemsGlobal);
-    const ok = bpCount >= 1;
+      : (c.uniqueName && c.uniqueName.includes('/WeaponParts/')
+          ? (miscItemsGlobal.get(c.uniqueName) || 0)
+          : (ownedBPsCountGlobal.get(compToBPPath(c.uniqueName)) || 0));
+    const bpPath = isMainBp ? c.uniqueName : compToBPPath(c.uniqueName);
+    const inFoundry = (allPendingBPsGlobal.has(bpPath) ? 1 : 0) + (allPendingBPsInProgressGlobal && allPendingBPsInProgressGlobal.has(bpPath) ? 1 : 0);
+    const total = raw + inFoundry;
+    const ok = total >= 1;
     const rowClass = ok ? 'row-ok' : 'row-miss';
     const qtyClass = ok ? 'qty-ok' : 'qty-miss';
     const icon = ok ? '✓' : '✕';
+    const foundryNote = inFoundry > 0 ? ` <span style="color:#888;font-weight:400">(${inFoundry} în Foundry)</span>` : '';
     return `<div class="comp-row ${rowClass}">
       <span class="comp-icon ${qtyClass}">${icon}</span>
       <span class="comp-name">${c.name}</span>
-      <span class="comp-qty ${qtyClass}">${bpCount} BP</span>
+      <span class="comp-qty ${qtyClass}">${total} BP${foundryNote}</span>
     </div>`;
   }).join('');
+
+  const reserveNote = reserved
+    ? `<div style="font-size:.72rem;color:#888;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #2a2a2a">
+        ⚠ Un set e reținut pentru tine — e cel deja în Foundry (${w.sellReason}). Cele <strong style="color:#e0e0e0">x${w.setCount}</strong> afișate pe card sunt seturi <strong style="color:#e0e0e0">în plus</strong>, separate de ce ai deja în construcție.
+      </div>`
+    : '';
+
+  body.innerHTML = rows + reserveNote;
 
   popup.style.top = '-9999px';
   popup.style.left = '-9999px';
