@@ -2283,7 +2283,10 @@ function renderMods() {
     grid.innerHTML = '<p style="color:#555;font-size:.82rem;padding:.5rem">Niciun mod duplicat găsit.</p>';
     return;
   }
-  grid.innerHTML = f.map(m => `
+  grid.innerHTML = f.map(m => {
+    const marketSlug = m.name.toLowerCase().replace(/ /g,'_');
+    const marketUrl = `https://warframe.market/items/${marketSlug}`;
+    return `
     <div class="mod-card">
       <div class="mod-rarity ${m.rarity}"></div>
       <div class="mod-info">
@@ -2294,7 +2297,9 @@ function renderMods() {
         <span class="mod-count">x${m.count}</span>
         <span class="mod-surplus">+${m.surplus} surplus</span>
       </div>
-    </div>`).join('');
+      <a class="wiki-btn" href="${marketUrl}" target="_blank" rel="noopener">Market ↗</a>
+    </div>`;
+  }).join('');
 }
 
 function buildDupeArcanes(inv) {
@@ -2382,7 +2387,10 @@ function renderArcanes() {
     return;
   }
   const rarityColor = {common:'#888',uncommon:'#4a8a4a',rare:'#c8a84b',legendary:'#c87840'};
-  grid.innerHTML = f.map(a => `
+  grid.innerHTML = f.map(a => {
+    const marketSlug = a.name.toLowerCase().replace(/ /g,'_');
+    const marketUrl = `https://warframe.market/items/${marketSlug}`;
+    return `
     <div class="mod-card">
       <div class="mod-rarity" style="background:${rarityColor[a.rarity]||'#888'};width:4px;border-radius:2px;align-self:stretch;flex-shrink:0"></div>
       <div class="mod-info">
@@ -2394,7 +2402,9 @@ function renderArcanes() {
         ${a.potentialR5 > 0 ? `<span class="mod-surplus" title="R5 ce pot fi formate din copiile R0">+${a.potentialR5} din R0</span>` : ''}
         ${a.surplusR5 > 0 ? `<span style="font-size:.68rem;color:#e05555;background:#200a0a;border:1px solid #401010;border-radius:3px;padding:1px 5px">-${a.surplusR5} surplus</span>` : ''}
       </div>
-    </div>`).join('');
+      <a class="wiki-btn" href="${marketUrl}" target="_blank" rel="noopener">Market ↗</a>
+    </div>`;
+  }).join('');
 }
 
 function renderSell() {
