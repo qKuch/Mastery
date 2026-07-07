@@ -641,7 +641,7 @@ function showPopup(w, anchorEl){
 function buildCard(w){
   const d=document.createElement('div');
   const cs=w.craftStatus;
-  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':cs==='bp_only'?' partial':'');
+  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'');
   const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
   const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
   let craftTag='';
@@ -649,6 +649,7 @@ function buildCard(w){
   else if(cs==='owned') craftTag=`<span class="craft-tag tag-owned">🎒 În inventar</span>`;
   else if(cs==='craftable') craftTag=`<span class="craft-tag tag-craft">🔨 Se poate crafta</span>`;
   else if(cs==='bp_only') craftTag=`<span class="craft-tag tag-bp">📦 BP deținut</span>`;
+  else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
   const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
   const infoBtn=(cs&&hasComps)?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
   d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
@@ -969,17 +970,6 @@ async function process(file){
       return {...w,category:'Archwing',craftStatus:cs,craftingTs:bpComp?(craftingBPs.get(bpComp.uniqueName)||null):null};
     });
 
-    // TEMP DEBUG — scan the FULL arrays (not just index 0/1) for any entry that
-    // has a ModularParts field, and report its mastery/XP status.
-    ['Pistols','Melee','MoaPets'].forEach(catKey=>{
-      const arr = inv[catKey]||[];
-      const modularOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
-      console.log(`[MasteryChecker debug] inv.${catKey}: ${arr.length} total, ${modularOnes.length} with ModularParts`);
-      modularOnes.forEach(w=>{
-        console.log(`[MasteryChecker debug]   -> ItemType=${w.ItemType} XP=${w.XP} mastered=${mastered.has(w.ItemType)} ModularParts=`, w.ModularParts);
-      });
-    });
-
     // Filter Modular items (Kitguns, Zaws, MOA companions) — these don't exist as
     // fixed entries in the static item catalog (each one is built from player-chosen
     // parts), so we detect them directly from the save data's ModularParts field
@@ -997,8 +987,9 @@ async function process(file){
     ];
     const notMasteredModular=[];
     modularSpecs.forEach(spec=>{
-      (inv[spec.invKey]||[]).forEach(w=>{
-        if(!w.ModularParts || !w.ModularParts.length) return; // skip regular (non-modular) entries in the same inv array
+      const arr = inv[spec.invKey]||[];
+      const builtOnes = arr.filter(w=>w.ModularParts && w.ModularParts.length);
+      builtOnes.forEach(w=>{
         if(!w.ItemType) return;
         if(mastered.has(w.ItemType)) return;
         const xp=w.XP||0;
@@ -1015,12 +1006,28 @@ async function process(file){
           components: [],
         });
       });
+      // Reminder card: modular combos are player-chosen, so there's no fixed
+      // catalog entry to check against. If you don't currently own a single
+      // built example of this type, surface a standing reminder to go build
+      // one — that's the actual actionable "what do I still need to craft"
+      // signal for these categories, rather than tracking one specific combo.
+      if(builtOnes.length===0){
+        notMasteredModular.push({
+          uniqueName: `__modular_reminder_${spec.invKey}`,
+          name: `${spec.label} (niciunul construit încă)`,
+          category: spec.category,
+          craftStatus: 'not_built',
+          isModular: true,
+          modularWikiSlug: spec.wikiSlug,
+          components: [],
+        });
+      }
     });
 
     const notMastered=[...notMasteredWeapons,...notMasteredWarframes,...notMasteredArchwings,...notMasteredCompanions,...notMasteredModular];
 
     const catOrder={'Primary':0,'Secondary':1,'Melee':2,'Arch-Gun':3,'Arch-Melee':4,'Archwing':5,'Companion':6,'Warframes':7};
-    const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3};
+    const statusOrder={claimable:0,owned:1,craftable:2,bp_only:3,not_built:4};
     notMastered.sort((a,b)=>{
       const sa=statusOrder[a.craftStatus]??4, sb=statusOrder[b.craftStatus]??4;
       if(sa!==sb) return sa-sb;
