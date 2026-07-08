@@ -2174,13 +2174,16 @@ function getCompBPCount(comp, ownedBPsCount, miscItems, pendingBPs, inProgressBP
     return (miscItems && miscItems.get(comp.uniqueName)) || 0;
   }
   const bpPath = compToBPPath(comp.uniqueName);
-  let count = (ownedBPsCount && ownedBPsCount.get(bpPath)) || 0;
-  // A sub-component BP currently in the Foundry (claimable or still building) is
-  // still a copy the player possesses, in transit — count it too, so surplus
-  // detection below works even when a sub-part is mid-craft.
-  if (pendingBPs && pendingBPs.has(bpPath)) count += 1;
-  if (inProgressBPs && inProgressBPs.has(bpPath)) count += 1;
-  return count;
+  let rawCount = (ownedBPsCount && ownedBPsCount.get(bpPath)) || 0;
+  // AlecaFrame leaves the Recipes entry's ItemCount un-decremented when a BP is
+  // sent to the Foundry, so the same physical copy appears in BOTH inv.Recipes
+  // AND inv.PendingRecipes. Treat 1 raw unit as "reserved/consumed" by that
+  // build instead of adding both pools together (which would double-count it).
+  const inFoundry = (pendingBPs && pendingBPs.has(bpPath)) || (inProgressBPs && inProgressBPs.has(bpPath));
+  if (inFoundry) {
+    return Math.max(rawCount - 1, 0) + 1; // remaining spares + the one building
+  }
+  return rawCount;
 }
 
 // Tradable set logic (based on wiki.warframe.com/w/Trading):
@@ -2341,9 +2344,12 @@ function buildSellItems(allItems, mastered, ownedItems, pendingBPs, inProgressBP
 
     // Count tradable sets: min BP count across main BP + all sub-BPs (inv.Recipes,
     // Foundry-claimable, and Foundry-in-progress all count as "a copy you possess")
-    const mainBpCount = (ownedBPsCount ? (ownedBPsCount.get(bpComp.uniqueName) || 0) : (ownedBPs.has(bpComp.uniqueName) ? 1 : 0))
-      + (bpComp && pendingBPs.has(bpComp.uniqueName) ? 1 : 0)
-      + (bpComp && inProgressBPs && inProgressBPs.has(bpComp.uniqueName) ? 1 : 0);
+    // Same fix as getCompBPCount: AlecaFrame leaves the raw Recipes entry
+    // un-decremented while the BP is in the Foundry, so treat 1 raw unit as
+    // consumed by that build instead of adding both pools together.
+    const mainRawCount = ownedBPsCount ? (ownedBPsCount.get(bpComp.uniqueName) || 0) : (ownedBPs.has(bpComp.uniqueName) ? 1 : 0);
+    const mainInFoundry = bpComp && (pendingBPs.has(bpComp.uniqueName) || (inProgressBPs && inProgressBPs.has(bpComp.uniqueName)));
+    const mainBpCount = mainInFoundry ? (Math.max(mainRawCount - 1, 0) + 1) : mainRawCount;
     const subCounts = craftableComps.map(c => getCompBPCount(c, ownedBPsCount, miscItems, pendingBPs, inProgressBPs));
     let setCount = Math.min(mainBpCount, ...subCounts);
 
@@ -2385,7 +2391,11 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
           : (ownedBPsCountGlobal.get(compToBPPath(c.uniqueName)) || 0));
     const bpPath = isMainBp ? c.uniqueName : compToBPPath(c.uniqueName);
     const inFoundry = (allPendingBPsGlobal.has(bpPath) ? 1 : 0) + (allPendingBPsInProgressGlobal && allPendingBPsInProgressGlobal.has(bpPath) ? 1 : 0);
-    const total = raw + inFoundry;
+    // Same fix as getCompBPCount: a raw entry still in inv.Recipes while the
+    // BP is also mid-Foundry is the SAME physical copy, not two — don't add
+    // them, treat 1 raw unit as consumed by that build instead.
+    const isWeaponPart = c.uniqueName && c.uniqueName.includes('/WeaponParts/');
+    const total = (inFoundry > 0 && !isWeaponPart) ? (Math.max(raw - 1, 0) + inFoundry) : (raw + inFoundry);
     const ok = total >= 1;
     const rowClass = ok ? 'row-ok' : 'row-miss';
     const qtyClass = ok ? 'qty-ok' : 'qty-miss';
