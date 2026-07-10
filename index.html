@@ -1605,6 +1605,13 @@ async function process(file){
         return !caught;
       }).map(e=>({t:e.ItemType, xp:e.XP}));
       console.log('[MasteryChecker debug] uncaught PowerSuit-like items (' + uncaught.length + '): ' + JSON.stringify(uncaught));
+
+      // Broader net: search ALL XPInfo for anything companion-related by name
+      // (Hound/Predasite/Vulpaphyla/Moa/Zanuka/Kavat/Kubrow), regardless of
+      // which bucket it currently lands in, to find the 1 missing companion.
+      const companionSearch = (inv.XPInfo||[]).filter(e=>/hound|predasite|vulpaphyla|moa|zanuka|kavat|kubrow|catbrow/i.test(e.ItemType||''))
+        .map(e=>({t:e.ItemType, xp:e.XP}));
+      console.log('[MasteryChecker debug] companionSearch (' + companionSearch.length + '): ' + JSON.stringify(companionSearch));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
