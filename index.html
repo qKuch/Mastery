@@ -1542,6 +1542,17 @@ async function process(file){
         .map(e=>({t:e.ItemType, xp:e.XP}));
       console.log('[MasteryChecker debug] moaZanukaAll(' + moaZanukaAll.length + '): ' + JSON.stringify(moaZanukaAll));
 
+      // Check PeriodicMissionCompletions — unexplored so far, name sounds
+      // Steel-Path/Sortie-adjacent. Also recheck Tier value distribution.
+      console.log('[MasteryChecker debug] PeriodicMissionCompletions: ' + JSON.stringify(inv.PeriodicMissionCompletions));
+      const tierDist = {};
+      (inv.Missions||[]).forEach(m=>{ const k=String(m.Tier); tierDist[k]=(tierDist[k]||0)+1; });
+      console.log('[MasteryChecker debug] Tier value distribution: ' + JSON.stringify(tierDist));
+      // Sum of ALL node values (if EVERY node were also done in Steel Path) vs
+      // what we currently detect, to see how much headroom exists.
+      const allNodesSum = Object.values(NODE_MASTERY_XP).reduce((a,b)=>a+b,0);
+      console.log('[MasteryChecker debug] sum of ALL known node values (max possible Steel Path bonus): ' + allNodesSum);
+
       // Exhaustive Steel Path search: every distinct key across all Missions
       // entries (in case there's a field beyond Tag/Completes/Tier we missed),
       // plus a fresh full scan of top-level inv keys (in case something new
