@@ -1223,10 +1223,11 @@ async function process(file){
     window.__allItemsGlobal = __allItems;
     renderMaterials();
     // Calculate real total mastery XP from XPInfo
-    // Each item contributes min(item_xp, cap) / ratio mastery XP
-    // But the simplest and most accurate: read PlayerXP if available,
-    // otherwise sum mastery contributions per item type
-    // Weapons: 3000 MR XP each, Warframes/Companions: 6000 MR XP each
+    // BUG FIX: this used to assume every entry present in XPInfo is fully maxed
+    // (flat 3000/6000 MR XP each) — but XPInfo lists ANY item with affinity, including
+    // ones still mid-leveling. The real formula is min(raw affinity, cap) / 150,
+    // where cap = 450,000 for weapons (→ max 3000 MR XP) and 900,000 for
+    // Warframes/Companions (→ max 6000 MR XP) — using the item's actual e.XP.
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
@@ -1234,11 +1235,13 @@ async function process(file){
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        return sum + (isWF ? 6000 : 3000);
+        const cap = isWF ? 900000 : 450000;
+        const raw = Math.min(e.XP || 0, cap);
+        return sum + (raw / 150);
       }, 0);
       const missionXP = (inv.Missions||[]).length * 100;
       const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
-      return itemXP + missionXP + junctionXP;
+      return Math.round(itemXP) + missionXP + junctionXP;
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
