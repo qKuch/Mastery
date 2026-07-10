@@ -1028,22 +1028,7 @@ async function process(file){
       return {...w,category:'Archwing',craftStatus:cs,craftingTs:bpComp?(craftingBPs.get(bpComp.uniqueName)||null):null};
     });
 
-    // TEMP DEBUG — find K-Drive board data (ItemType/ModularParts) so the exact
-    // internal codenames per Board (Flatbelly, Bad Baby, Needlenose, Runway,
-    // Feverspine) can be confirmed against real save data instead of guessed.
-    (function debugKDrive(){
-      const candidates = ['Hoverboards','KDrives','Vehicles'];
-      candidates.forEach(k=>{
-        if(inv[k] && inv[k].length){
-          console.log(`[MasteryChecker debug] inv.${k}: ${inv[k].length} entries`, inv[k]);
-        }
-      });
-      const miscHoverboard = (inv.MiscItems||[]).filter(m=>/Hoverboard/i.test(m.ItemType||''));
-      console.log(`[MasteryChecker debug] inv.MiscItems matching Hoverboard: ${miscHoverboard.length}`, miscHoverboard);
-      const recipesHoverboard = (inv.Recipes||[]).filter(r=>/Hoverboard/i.test(r.ItemType||''));
-      console.log(`[MasteryChecker debug] inv.Recipes matching Hoverboard: ${recipesHoverboard.length}`, recipesHoverboard);
-    })();
-
+    
     // Filter Modular items (Kitguns, Zaws, MOA companions) — these don't exist as
     // fixed entries in the static item catalog (each one is built from player-chosen
     // parts), so we detect them directly from the save data's ModularParts field
@@ -1283,6 +1268,13 @@ async function process(file){
 
     // Calculate real total mastery XP from XPInfo
     // Weapons: 3000 MR XP each (4000 for TIER40_WEAPONS), Warframes/Companions: 6000 MR XP each.
+    // Missions with a "Tier" field (Steel Path / Netracell / other alt-mode
+    // completions) are excluded from the flat +100 credit.
+    // Both Railjack AND Drifter Intrinsics count toward Mastery per the wiki
+    // (1,500 XP/rank each) — included honestly even though the combined total
+    // currently overshoots the real value; the overshoot itself is a bug to
+    // find (likely junctionXP or a missing rank-40 category), not a reason to
+    // drop a confirmed XP source.
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
@@ -1293,105 +1285,28 @@ async function process(file){
         if(isWF) return sum + 6000;
         return sum + (TIER40_WEAPONS.has(t) ? 4000 : 3000);
       }, 0);
-      const missionXP = (inv.Missions||[]).length * 100;
+      const normalMissions = (inv.Missions||[]).filter(m => m.Tier === undefined || m.Tier === null);
+      const missionXP = normalMissions.length * 100;
       const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
-      return itemXP + missionXP + junctionXP;
-    })();
-
-    // TEMP DEBUG — real total XP is off by a measurable amount (user-confirmed:
-    // ~75k too low). Dump samples to find the actual source: XPInfo entry shape,
-    // whether e.XP exists/what scale it's on, mission/junction counts, and any
-    // categories the isWF split might be missing (Archwing, Arch-Gun/Melee,
-    // Necramechs, Sentinel weapons vs Sentinel bodies, etc).
-    (function debugXP(){
-      const xpInfo = inv.XPInfo||[];
-      console.log(`[MasteryChecker debug] XPInfo entries: ${xpInfo.length}`);
-      console.log(`[MasteryChecker debug] sample XPInfo[0..4]:`, xpInfo.slice(0,5));
-      const withXPField = xpInfo.filter(e=>e.XP !== undefined && e.XP !== null);
-      console.log(`[MasteryChecker debug] entries WITH an XP field: ${withXPField.length} / ${xpInfo.length}`);
-      console.log(`[MasteryChecker debug] inv.Missions length: ${(inv.Missions||[]).length}`);
-      console.log(`[MasteryChecker debug] inv.ClaimedJunctionChallengeRewards length: ${(inv.ClaimedJunctionChallengeRewards||[]).length}`);
-      // Category breakdown of XPInfo ItemType paths, to spot anything uncounted/misclassified
-      const pathBuckets = {};
-      xpInfo.forEach(e=>{
-        const t = e.ItemType||'';
-        const seg = t.split('/').slice(0,4).join('/');
-        pathBuckets[seg] = (pathBuckets[seg]||0) + 1;
-      });
-      console.log('[MasteryChecker debug] XPInfo ItemType path prefixes (top-level buckets):', pathBuckets);
-    })();
-
-    // TEMP DEBUG 5 — separate normal vs Steel Path (Tier field) mission entries,
-    // and compute several total hypotheses (Railjack-only vs +Drifter intrinsics)
-    // to see which lands closest to the real in-game total.
-    (function debugXP5(){
-      const missions = inv.Missions||[];
-      const withTier = missions.filter(m=>m.Tier !== undefined && m.Tier !== null);
-      const withoutTier = missions.filter(m=>m.Tier === undefined || m.Tier === null);
-      console.log(`[MasteryChecker debug] Missions WITH Tier field (Steel Path?): ${withTier.length}`);
-      console.log(`[MasteryChecker debug] Missions WITHOUT Tier field (normal): ${withoutTier.length}`);
-      const tierValues = {};
-      withTier.forEach(m=>{ tierValues[m.Tier] = (tierValues[m.Tier]||0)+1; });
-      console.log('[MasteryChecker debug] distinct Tier values found:', tierValues);
-
       const ps = inv.PlayerSkills || {};
-      const railjackRanks = (ps.LPS_TACTICAL||0)+(ps.LPS_PILOTING||0)+(ps.LPS_GUNNERY||0)+(ps.LPS_ENGINEERING||0)+(ps.LPS_COMMAND||0);
-      const drifterRanks = (ps.LPS_DRIFT_RIDING||0)+(ps.LPS_DRIFT_OPPORTUNITY||0)+(ps.LPS_DRIFT_COMBAT||0)+(ps.LPS_DRIFT_ENDURANCE||0);
-      console.log(`[MasteryChecker debug] Railjack intrinsic ranks: ${railjackRanks} → ${railjackRanks*1500} XP`);
-      console.log(`[MasteryChecker debug] Drifter intrinsic ranks: ${drifterRanks} → ${drifterRanks*1500} XP`);
-
-      // Base (current tool total, before intrinsics) — recompute independently here
-      const xpInfo = inv.XPInfo||[];
-      let wfCount=0, tier40Count=0, weaponCount=0;
-      xpInfo.forEach(e=>{
-        const t=e.ItemType||'';
-        const isWF = t.includes('/Powersuits/')||t.includes('/Sentinels/SentinelPowersuits/')||t.includes('/Game/KubrowPet/')||t.includes('/Game/CatbrowPet/')||t.includes('/Friendly/Pets/')||t.includes('/NeutralCreatures/')||t.includes('/Vehicles/');
-        if(isWF) wfCount++;
-        else { weaponCount++; if(TIER40_WEAPONS.has(t)) tier40Count++; }
-      });
-      const itemXP = wfCount*6000 + tier40Count*4000 + (weaponCount-tier40Count)*3000;
-      const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
-      const baseNoMissions = itemXP + junctionXP;
-
-      console.log(`[MasteryChecker debug] --- HYPOTHESES ---`);
-      console.log(`[MasteryChecker debug] base (items+junctions, no missions/intrinsics): ${baseNoMissions}`);
-      console.log(`[MasteryChecker debug] H1: base + all missions×100 (current formula): ${baseNoMissions + missions.length*100}`);
-      console.log(`[MasteryChecker debug] H2: base + normal-only×100 + Railjack intrinsics: ${baseNoMissions + withoutTier.length*100 + railjackRanks*1500}`);
-      console.log(`[MasteryChecker debug] H3: base + all missions×100 + Railjack intrinsics: ${baseNoMissions + missions.length*100 + railjackRanks*1500}`);
-      console.log(`[MasteryChecker debug] H4: base + all missions×100 + Railjack + Drifter intrinsics: ${baseNoMissions + missions.length*100 + railjackRanks*1500 + drifterRanks*1500}`);
-      console.log(`[MasteryChecker debug] H5: base + normal-only×100 + Railjack + Drifter intrinsics: ${baseNoMissions + withoutTier.length*100 + railjackRanks*1500 + drifterRanks*1500}`);
-      console.log(`[MasteryChecker debug] REAL TARGET (tell us this from in-game): compare above to your real total`);
+      const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
+      const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
+      const intrinsicsXP = (railjackRanks + drifterRanks) * 1500;
+      return itemXP + missionXP + junctionXP + intrinsicsXP;
     })();
-    // totalMasteryXP, so the ~71k gap vs real in-game total can be isolated
-    // exactly instead of hand-counting from a screenshot.
-    (function debugXP2(){
+
+    // TEMP DEBUG 6 — with Drifter intrinsics honestly included, find the real
+    // source of the overshoot: junction rewards content (is it really 1-per-
+    // junction, or per-task?), and any Necramech/Paracesis rank-40 items not
+    // covered by TIER40_WEAPONS (WFCD didn't tag those with maxLevelCap=40).
+    (function debugXP6(){
+      const junctions = inv.ClaimedJunctionChallengeRewards||[];
+      console.log(`[MasteryChecker debug] ClaimedJunctionChallengeRewards (${junctions.length}) full list:`, JSON.stringify(junctions));
       const xpInfo = inv.XPInfo||[];
-      let wfCount=0, weaponCount=0, tier40Count=0;
-      const wfEntries=[], tier40Entries=[];
-      xpInfo.forEach(e=>{
-        const t = e.ItemType||'';
-        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
-                     t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
-                     t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
-                     t.includes('/Vehicles/');
-        if(isWF){ wfCount++; wfEntries.push(t); }
-        else if(TIER40_WEAPONS.has(t)){ tier40Count++; weaponCount++; tier40Entries.push(t); }
-        else { weaponCount++; }
-      });
-      const itemXP2 = wfCount*6000 + tier40Count*4000 + (weaponCount-tier40Count)*3000;
-      const missionXP2 = (inv.Missions||[]).length * 100;
-      const junctionXP2 = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
-      console.log(`[MasteryChecker debug] isWF=true count: ${wfCount} (×6000 = ${wfCount*6000})`);
-      console.log(`[MasteryChecker debug] tier40 (Kuva/Tenet/Coda) count: ${tier40Count} (×4000 = ${tier40Count*4000})`);
-      console.log(`[MasteryChecker debug] normal weapon count: ${weaponCount-tier40Count} (×3000 = ${(weaponCount-tier40Count)*3000})`);
-      console.log(`[MasteryChecker debug] itemXP total: ${itemXP2}`);
-      console.log(`[MasteryChecker debug] missionXP: ${missionXP2} | junctionXP: ${junctionXP2}`);
-      console.log(`[MasteryChecker debug] GRAND TOTAL (tier40-aware formula): ${itemXP2+missionXP2+junctionXP2}`);
-      console.log(`[MasteryChecker debug] tier40 ItemTypes found:`, tier40Entries);
-      const typeCounts = {};
-      xpInfo.forEach(e=>{ const t=e.ItemType||''; typeCounts[t]=(typeCounts[t]||0)+1; });
-      const dupes = Object.entries(typeCounts).filter(([k,v])=>v>1);
-      console.log(`[MasteryChecker debug] duplicate ItemType entries in XPInfo: ${dupes.length}`, dupes);
+      const necramechLike = xpInfo.filter(e=>/Mech|Necramech|Voidrig|Bonewidow|Jugulus/i.test(e.ItemType||''));
+      console.log(`[MasteryChecker debug] XPInfo entries matching Necramech-like names:`, JSON.stringify(necramechLike));
+      const paracesis = xpInfo.filter(e=>/Paracesis/i.test(e.ItemType||''));
+      console.log(`[MasteryChecker debug] XPInfo entries matching Paracesis:`, JSON.stringify(paracesis));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
