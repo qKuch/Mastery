@@ -1267,27 +1267,33 @@ async function process(file){
 ]);
 
     // Calculate real total mastery XP from XPInfo
-    // Weapons: 3000 MR XP each (4000 for TIER40_WEAPONS), Warframes/Companions: 6000 MR XP each.
+    // Weapons: 3000 MR XP each (4000 for TIER40_WEAPONS/Necramechs), Warframes/
+    // Companions: 6000 MR XP each. Necramechs (EntratiMech) rank to 40 like
+    // Kuva/Tenet/Coda weapons, so they get 8000 (200×40) instead of 6000.
     // Missions with a "Tier" field (Steel Path / Netracell / other alt-mode
     // completions) are excluded from the flat +100 credit.
-    // Both Railjack AND Drifter Intrinsics count toward Mastery per the wiki
-    // (1,500 XP/rank each) — included honestly even though the combined total
-    // currently overshoots the real value; the overshoot itself is a bug to
-    // find (likely junctionXP or a missing rank-40 category), not a reason to
-    // drop a confirmed XP source.
+    // ClaimedJunctionChallengeRewards lists individual TASKS (multiple per
+    // junction, e.g. "VMKillBossJackal", "VMPurchaseRhinoBlueprint" are both
+    // under the Mars junction "VM"), not one entry per junction — the wiki
+    // confirms Mastery is granted once per completed JUNCTION (1,000 XP), so
+    // we count unique 2-letter junction codes instead of raw entry count.
+    // Railjack AND Drifter Intrinsics both count per the wiki (1,500 XP/rank).
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
+        const isNecramech = t.includes('/EntratiMech/');
         const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
+        if(isNecramech) return sum + 8000;
         if(isWF) return sum + 6000;
         return sum + (TIER40_WEAPONS.has(t) ? 4000 : 3000);
       }, 0);
       const normalMissions = (inv.Missions||[]).filter(m => m.Tier === undefined || m.Tier === null);
       const missionXP = normalMissions.length * 100;
-      const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
+      const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
+      const junctionXP = junctionCodes.size * 1000;
       const ps = inv.PlayerSkills || {};
       const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
       const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
@@ -1295,18 +1301,13 @@ async function process(file){
       return itemXP + missionXP + junctionXP + intrinsicsXP;
     })();
 
-    // TEMP DEBUG 6 — with Drifter intrinsics honestly included, find the real
-    // source of the overshoot: junction rewards content (is it really 1-per-
-    // junction, or per-task?), and any Necramech/Paracesis rank-40 items not
-    // covered by TIER40_WEAPONS (WFCD didn't tag those with maxLevelCap=40).
-    (function debugXP6(){
-      const junctions = inv.ClaimedJunctionChallengeRewards||[];
-      console.log(`[MasteryChecker debug] ClaimedJunctionChallengeRewards (${junctions.length}) full list:`, JSON.stringify(junctions));
-      const xpInfo = inv.XPInfo||[];
-      const necramechLike = xpInfo.filter(e=>/Mech|Necramech|Voidrig|Bonewidow|Jugulus/i.test(e.ItemType||''));
-      console.log(`[MasteryChecker debug] XPInfo entries matching Necramech-like names:`, JSON.stringify(necramechLike));
-      const paracesis = xpInfo.filter(e=>/Paracesis/i.test(e.ItemType||''));
-      console.log(`[MasteryChecker debug] XPInfo entries matching Paracesis:`, JSON.stringify(paracesis));
+    // TEMP DEBUG 7 — check the junction-dedup + Necramech fix result, and keep
+    // hunting: were there other rank-40 items missed, and is missionXP itself
+    // still slightly off (not all "normal" nodes necessarily give XP either)?
+    (function debugXP7(){
+      const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
+      console.log(`[MasteryChecker debug] unique junction codes (${junctionCodes.size}):`, [...junctionCodes]);
+      console.log(`[MasteryChecker debug] NEW totalMasteryXP:`, totalMasteryXP);
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
