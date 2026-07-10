@@ -291,6 +291,13 @@ select.fb:focus{outline:none;border-color:#c8a84b}
       <!-- ITEMS panel (existing) -->
       <div id="mastery-panel-items">
         <div class="stats" id="stats"></div>
+        <div id="xp-override-row" style="display:none;margin-top:.6rem;font-size:.72rem;color:#888;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <span>XP exact (opțional, din ecranul Mastery Rank din joc — suprascrie estimarea, care poate fi puțin sub real din cauza XP-ului de Steel Path, netrackuit în .dat):</span>
+          <input type="number" id="xp-override-input" placeholder="ex: 2269488" style="width:9rem;background:#15151c;border:1px solid #333;border-radius:4px;color:#eee;padding:2px 6px;font-size:.72rem">
+          <button class="fb" id="xp-override-save" style="font-size:.7rem;padding:2px 8px">Aplică</button>
+          <button class="fb" id="xp-override-clear" style="font-size:.7rem;padding:2px 8px">Șterge (folosește estimarea)</button>
+          <span id="xp-override-status"></span>
+        </div>
         <div id="mr-progress-wrap" style="display:none;margin-top:.75rem"></div>
         <div class="toolbar">
         <input type="text" id="search" placeholder="Caută...">
@@ -1489,15 +1496,18 @@ const NODE_MASTERY_XP = {
       }, 0);
       // Lookup is comprehensive (169 mastery-granting nodes, sums to exactly
       // 14,569 — verified against the wiki's official total).
-      // NOTE: the "Tier" field on Missions entries does NOT specifically mean
-      // Steel Path — it also appears on Junctions, Relay hubs, and hidden nodes,
-      // so it can't be used to detect Steel Path completion. The "8,901 Steel
-      // Path Missions" XP visible in the in-game breakdown currently has no
-      // known source field in this save data, so it's NOT included below —
-      // total will undershoot the real value by roughly that amount.
+      // CONFIRMED via calamity-inc/browse.wf's own profile parser source
+      // (profile.ts: `mission.Tier ? "✓" : ""` in their "Steel Path" column):
+      // a truthy Tier field DOES mean this node was also cleared in Steel
+      // Path, and per the wiki, that grants the SAME node value again. Junction/
+      // hub entries also sometimes carry a Tier value for unrelated reasons,
+      // but since they aren't in NODE_MASTERY_XP, their base val is already 0,
+      // so the Steel Path bonus on them is harmlessly 0 too.
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
-        return sum + (NODE_MASTERY_XP[tag] || 0);
+        const val = NODE_MASTERY_XP[tag] || 0;
+        const steelPathBonus = m.Tier ? val : 0;
+        return sum + val + steelPathBonus;
       }, 0);
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
       const junctionXP = junctionCodes.size * 1000;
