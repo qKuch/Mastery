@@ -1267,47 +1267,56 @@ async function process(file){
 ]);
 
     // Calculate real total mastery XP from XPInfo
-    // Weapons: 3000 MR XP each (4000 for TIER40_WEAPONS/Necramechs), Warframes/
-    // Companions: 6000 MR XP each. Necramechs (EntratiMech) rank to 40 like
-    // Kuva/Tenet/Coda weapons, so they get 8000 (200×40) instead of 6000.
-    // Missions with a "Tier" field (Steel Path / Netracell / other alt-mode
-    // completions) are excluded from the flat +100 credit.
-    // ClaimedJunctionChallengeRewards lists individual TASKS (multiple per
-    // junction, e.g. "VMKillBossJackal", "VMPurchaseRhinoBlueprint" are both
-    // under the Mars junction "VM"), not one entry per junction — the wiki
-    // confirms Mastery is granted once per completed JUNCTION (1,000 XP), so
-    // we count unique 2-letter junction codes instead of raw entry count.
-    // Railjack AND Drifter Intrinsics both count per the wiki (1,500 XP/rank).
+    // CONFIRMED against the in-game "Mastery Breakdown" screen: items that are
+    // NOT fully maxed only contribute PROPORTIONAL credit (e.g. Bonewidow sitting
+    // at exactly 900,000 raw XP — the rank-30-equivalent point, not yet rank 40 —
+    // contributed only 6,000 of its possible 8,000). So credit = min(e.XP, cap)/150,
+    // not a flat cap value regardless of actual progress.
+    // Caps: weapon 450,000 raw (3000 MR) / 600,000 (4000 MR) for TIER40_WEAPONS.
+    // Warframe/Companion/Necramech 900,000 raw (6000 MR) / 1,200,000 (8000 MR)
+    // for Necramechs (EntratiMech), which are confirmed rank-40 like Kuva/Tenet.
+    // Railjack AND Drifter Intrinsics both count, 1,500 XP/rank — CONFIRMED
+    // exact match (63,000 and 60,000 respectively) against the real breakdown.
+    // Junctions: ClaimedJunctionChallengeRewards lists individual TASKS (several
+    // per junction), not one entry per junction — Mastery is granted once per
+    // completed JUNCTION (1,000 XP), so we count unique 2-letter junction codes.
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
+        const xp = e.XP || 0;
         const isNecramech = t.includes('/EntratiMech/');
         const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        if(isNecramech) return sum + 8000;
-        if(isWF) return sum + 6000;
-        return sum + (TIER40_WEAPONS.has(t) ? 4000 : 3000);
+        let cap;
+        if(isNecramech) cap = 1200000; // rank 40
+        else if(isWF) cap = 900000; // rank 30
+        else if(TIER40_WEAPONS.has(t)) cap = 600000; // rank 40
+        else cap = 450000; // rank 30
+        return sum + Math.min(xp, cap) / 150;
       }, 0);
-      const normalMissions = (inv.Missions||[]).filter(m => m.Tier === undefined || m.Tier === null);
-      const missionXP = normalMissions.length * 100;
+      const missionXP = (inv.Missions||[]).length * 100;
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
       const junctionXP = junctionCodes.size * 1000;
       const ps = inv.PlayerSkills || {};
       const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
       const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
       const intrinsicsXP = (railjackRanks + drifterRanks) * 1500;
-      return itemXP + missionXP + junctionXP + intrinsicsXP;
+      return Math.round(itemXP) + missionXP + junctionXP + intrinsicsXP;
     })();
 
-    // TEMP DEBUG 7 — check the junction-dedup + Necramech fix result, and keep
-    // hunting: were there other rank-40 items missed, and is missionXP itself
-    // still slightly off (not all "normal" nodes necessarily give XP either)?
-    (function debugXP7(){
-      const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
-      console.log(`[MasteryChecker debug] unique junction codes (${junctionCodes.size}):`, [...junctionCodes]);
-      console.log(`[MasteryChecker debug] NEW totalMasteryXP:`, totalMasteryXP);
+    // TEMP DEBUG 8 — validate the proportional-credit rewrite against the
+    // in-game Mastery Breakdown numbers (Necramechs should now read 14,000
+    // instead of a flat 16,000; itemXP total should be noticeably lower too).
+    (function debugXP8(){
+      const necramechXP = (inv.XPInfo||[]).reduce((sum,e)=>{
+        const t=e.ItemType||'';
+        if(!t.includes('/EntratiMech/')) return sum;
+        return sum + Math.min(e.XP||0, 1200000)/150;
+      },0);
+      console.log(`[MasteryChecker debug] Necramech XP (should be 14000): ${necramechXP}`);
+      console.log(`[MasteryChecker debug] NEW totalMasteryXP (proportional formula):`, totalMasteryXP);
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
