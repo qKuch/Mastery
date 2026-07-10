@@ -291,32 +291,6 @@ select.fb:focus{outline:none;border-color:#c8a84b}
       <!-- ITEMS panel (existing) -->
       <div id="mastery-panel-items">
         <div class="stats" id="stats"></div>
-        <div id="api-sync-row" style="margin-top:.6rem">
-          <button class="fb" id="api-sync-toggle" style="font-size:.72rem">🔄 Sincronizare API (XP 100% exact, opțional)</button>
-          <div id="api-sync-panel" style="display:none;margin-top:.5rem;padding:.6rem;background:#15151c;border:1px solid #2a2a35;border-radius:6px;font-size:.72rem;color:#aaa;line-height:1.5">
-            <div style="margin-bottom:.5rem">
-              Loghează-te pe <a href="https://www.warframe.com/" target="_blank" style="color:#7aeaaa">warframe.com</a>, apoi vizitează <a href="https://www.warframe.com/api/user-data" target="_blank" style="color:#7aeaaa">warframe.com/api/user-data</a> — caută <code>"user_id"</code>, copiază valoarea (Account ID).
-            </div>
-            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem">
-              <input type="text" id="api-sync-accountid" placeholder="Account ID" style="width:14rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:3px 7px;font-size:.72rem">
-              <button class="fb" id="api-sync-fetch" style="font-size:.7rem;padding:2px 8px">Sincronizează automat</button>
-            </div>
-            <div id="api-sync-manual" style="display:none;border-top:1px solid #2a2a35;padding-top:.5rem;margin-top:.3rem">
-              <div style="margin-bottom:.4rem;color:#e05555">Sincronizarea automată a eșuat (probabil CORS/anti-bot). Metodă manuală:</div>
-              <div style="margin-bottom:.4rem">
-                Vizitează <code style="color:#e0e0e0">https://api.warframe.com/cdn/getProfileViewingData.php?playerId=ACCOUNT_ID</code> (cu ID-ul tău), selectează tot textul (Ctrl+A, Ctrl+C), apoi lipește-l direct aici jos (Ctrl+V):
-              </div>
-              <textarea id="api-sync-paste" placeholder="Lipește aici JSON-ul (Ctrl+V)..." style="width:100%;height:4rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:5px 7px;font-size:.68rem;font-family:monospace;resize:vertical"></textarea>
-              <div style="margin-top:.4rem">
-                <button class="fb" id="api-sync-paste-process" style="font-size:.7rem;padding:2px 8px">Procesează textul lipit</button>
-                <span style="color:#666;margin:0 .4rem">sau</span>
-                <input type="file" id="api-sync-file" accept="application/json,.json,.txt" style="font-size:.7rem;color:#aaa">
-              </div>
-            </div>
-            <button class="fb" id="api-sync-clear" style="font-size:.7rem;padding:2px 8px">Șterge sincronizarea</button>
-            <div id="api-sync-status" style="margin-top:.5rem"></div>
-          </div>
-        </div>
         <div id="mr-progress-wrap" style="display:none;margin-top:.75rem"></div>
         <div class="toolbar">
         <input type="text" id="search" placeholder="Caută...">
@@ -1895,105 +1869,6 @@ function renderMaterials(){
 // ── Calculator MR ──────────────────────────────────────────
 let calcData = null;
 
-// ── API sync (live game data, for 100%-accurate XP incl. Steel Path) ──────
-let apiSyncResult = null; // { currentMR, totalXP, debug, timestamp }
-
-function loadApiSyncFromStorage() {
-  try {
-    const raw = localStorage.getItem('wf_api_sync');
-    return raw ? JSON.parse(raw) : null;
-  } catch(e) { return null; }
-}
-function saveApiSyncToStorage(result) {
-  try { localStorage.setItem('wf_api_sync', JSON.stringify(result)); } catch(e) {}
-}
-function clearApiSync() {
-  try { localStorage.removeItem('wf_api_sync'); } catch(e) {}
-  apiSyncResult = null;
-  if(calcData) initCalculator(calcData.currentMR, calcData.totalXP, calcData.allMissingItems);
-  updateApiSyncStatus();
-}
-function updateApiSyncStatus() {
-  const el = document.getElementById('api-sync-status');
-  if(!el) return;
-  if(apiSyncResult) {
-    const d = new Date(apiSyncResult.timestamp);
-    el.innerHTML = `<span style="color:#7aeaaa">✓ Sincronizat: <strong>${apiSyncResult.totalXP.toLocaleString()}</strong> XP, rank ${apiSyncResult.currentMR} (la ${d.toLocaleString('ro-RO')})</span>`;
-  } else {
-    el.innerHTML = '<span style="color:#666">Nesincronizat — se folosește estimarea din .dat</span>';
-  }
-}
-function applyProfileJson(json) {
-  const profileInv = json.Results ? json.Results[0] : json;
-  if(!profileInv || profileInv.PlayerLevel === undefined) {
-    throw new Error('Format JSON necunoscut — lipsește PlayerLevel. Asigură-te că e răspunsul de la getProfileViewingData.php.');
-  }
-  // DIAGNOSTIC — the public profile API's data shape may not match the .dat
-  // save's XPInfo/Missions structure (this endpoint is meant for VIEWING other
-  // players, so it may only expose a curated subset). Log exactly what's here.
-  console.log('[MasteryChecker debug] profile top-level keys: ' + JSON.stringify(Object.keys(profileInv)));
-  console.log('[MasteryChecker debug] profile.XPInfo length: ' + ((profileInv.XPInfo||[]).length));
-  console.log('[MasteryChecker debug] profile.XPInfo sample: ' + JSON.stringify((profileInv.XPInfo||[]).slice(0,5)));
-  console.log('[MasteryChecker debug] profile.Missions length: ' + ((profileInv.Missions||[]).length));
-  console.log('[MasteryChecker debug] profile.PlayerSkills: ' + JSON.stringify(profileInv.PlayerSkills));
-  console.log('[MasteryChecker debug] profile.ClaimedJunctionChallengeRewards length: ' + ((profileInv.ClaimedJunctionChallengeRewards||[]).length));
-
-  const xpResult = computeMasteryXP(profileInv);
-  const currentMR = profileInv.PlayerLevel || 0;
-  apiSyncResult = { currentMR, totalXP: xpResult.total, debug: xpResult, timestamp: Date.now() };
-  saveApiSyncToStorage(apiSyncResult);
-  console.log('[MasteryChecker debug] API sync: ' + JSON.stringify(xpResult));
-  if(calcData) initCalculator(calcData.currentMR, calcData.totalXP, calcData.allMissingItems);
-  updateApiSyncStatus();
-}
-async function handleApiSyncFile(file) {
-  const statusEl = document.getElementById('api-sync-status');
-  statusEl.innerHTML = '<span style="color:#c8a84b">Se procesează...</span>';
-  try {
-    const text = await file.text();
-    applyProfileJson(JSON.parse(text));
-  } catch(e) {
-    statusEl.innerHTML = `<span style="color:#e05555">Eroare: ${e.message}</span>`;
-  }
-}
-async function handleApiSyncFetch(accountId) {
-  const statusEl = document.getElementById('api-sync-status');
-  const manualEl = document.getElementById('api-sync-manual');
-  accountId = (accountId || '').trim();
-  if(!accountId) {
-    statusEl.innerHTML = '<span style="color:#e05555">Introdu Account ID-ul mai întâi.</span>';
-    return;
-  }
-  const targetUrl = `https://api.warframe.com/cdn/getProfileViewingData.php?playerId=${encodeURIComponent(accountId)}`;
-  // Try a direct fetch first, then fall back through a couple of public CORS
-  // proxies (DE's API likely doesn't send Access-Control-Allow-Origin, so a
-  // plain browser fetch from our origin gets silently blocked) before finally
-  // giving up and showing the manual copy/paste method.
-  const attempts = [
-    { label: 'direct', url: targetUrl, unwrap: r => r.json() },
-    { label: 'corsproxy.io', url: `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`, unwrap: r => r.json() },
-    { label: 'allorigins.win', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, unwrap: r => r.json() },
-  ];
-  for(const attempt of attempts) {
-    statusEl.innerHTML = `<span style="color:#c8a84b">Se încearcă (${attempt.label})...</span>`;
-    try {
-      const res = await fetch(attempt.url);
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await attempt.unwrap(res);
-      applyProfileJson(json);
-      manualEl.style.display = 'none';
-      return;
-    } catch(e) {
-      console.log(`[MasteryChecker debug] API sync attempt "${attempt.label}" failed: ${e.message}`);
-      // try next attempt
-    }
-  }
-  // All attempts failed — fall back to the manual copy/upload method.
-  statusEl.innerHTML = `<span style="color:#e05555">Sincronizarea automată a eșuat (CORS/rate-limit). Folosește metoda manuală mai jos.</span>`;
-  manualEl.style.display = '';
-}
-apiSyncResult = loadApiSyncFromStorage();
-
 // MR rank label: MR1-30, then LR1-LR6 (max LR6 for non-founders)
 function mrName(rank){
   if(rank <= 30) return `MR${rank}`;
@@ -2095,7 +1970,7 @@ function renderMRProgress(currentMR, totalXP, missingItems){
       </div>
 
       <div class="mr-summary-line">
-        <span>Rank curent: <strong>${mrName(currentMR)}</strong> (${totalXP.toLocaleString()} XP)${apiSyncResult ? ' <span style="color:#7aeaaa">✓ date live din API</span>' : ' <span style="color:#c8a84b">estimare din .dat</span>'}</span>
+        <span>Rank curent: <strong>${mrName(currentMR)}</strong> (${totalXP.toLocaleString()} XP)</span>
         <span>Cu tot ce mai lipsește: <strong>${mrName(maxReachable)}</strong> (${maxXP.toLocaleString()} XP)</span>
       </div>
     </div>`;
@@ -2103,19 +1978,16 @@ function renderMRProgress(currentMR, totalXP, missingItems){
 
 function initCalculator(currentMR, totalXP, allMissingItems){
   calcData = { currentMR, totalXP, allMissingItems };
-  const displayMR = apiSyncResult ? apiSyncResult.currentMR : currentMR;
-  const displayXP = apiSyncResult ? apiSyncResult.totalXP : totalXP;
-  renderMRProgress(displayMR, displayXP, allMissingItems);
-  const xpToNext = Math.max(0, mrXpRequired(displayMR + 1) - displayXP);
+  renderMRProgress(currentMR, totalXP, allMissingItems);
+  const xpToNext = Math.max(0, mrXpRequired(currentMR + 1) - totalXP);
   document.getElementById('calc-current-display').innerHTML =
-    `Rank curent: <strong>${mrName(displayMR)}</strong>
-     &nbsp;·&nbsp; XP ${apiSyncResult ? 'exact (sincronizat din API)' : 'estimat'}: <strong>${displayXP.toLocaleString()}</strong>
-     &nbsp;·&nbsp; Până la ${mrName(displayMR+1)}: <strong style="color:#ff9a4a">~${xpToNext.toLocaleString()}</strong> XP`;
+    `Rank curent: <strong>${mrName(currentMR)}</strong>
+     &nbsp;·&nbsp; XP estimat: <strong>${totalXP.toLocaleString()}</strong>
+     &nbsp;·&nbsp; Până la ${mrName(currentMR+1)}: <strong style="color:#ff9a4a">~${xpToNext.toLocaleString()}</strong> XP`;
   document.getElementById('calc-target').max = 36;
-  document.getElementById('calc-target').value = Math.min(displayMR + 1, 36);
-  document.getElementById('calc-xp-override').value = displayXP;
-  document.getElementById('calc-xp-override').placeholder = displayXP.toLocaleString();
-  updateApiSyncStatus();
+  document.getElementById('calc-target').value = Math.min(currentMR + 1, 36);
+  document.getElementById('calc-xp-override').value = totalXP;
+  document.getElementById('calc-xp-override').placeholder = totalXP.toLocaleString();
 }
 
 function runCalculator(){
@@ -2526,34 +2398,6 @@ drop.ondrop=async e=>{
   const f=e.dataTransfer.files[0];
   if(f) loadFile(f, null);
 };
-
-document.getElementById('api-sync-toggle').onclick = () => {
-  const panel = document.getElementById('api-sync-panel');
-  panel.style.display = panel.style.display === 'none' ? '' : 'none';
-  updateApiSyncStatus();
-};
-document.getElementById('api-sync-file').onchange = (e) => {
-  if(e.target.files[0]) handleApiSyncFile(e.target.files[0]);
-};
-document.getElementById('api-sync-fetch').onclick = () => {
-  handleApiSyncFetch(document.getElementById('api-sync-accountid').value);
-};
-document.getElementById('api-sync-paste-process').onclick = () => {
-  const statusEl = document.getElementById('api-sync-status');
-  const text = document.getElementById('api-sync-paste').value.trim();
-  if(!text) {
-    statusEl.innerHTML = '<span style="color:#e05555">Lipește mai întâi textul JSON în căsuță.</span>';
-    return;
-  }
-  try {
-    applyProfileJson(JSON.parse(text));
-    document.getElementById('api-sync-manual').style.display = 'none';
-    document.getElementById('api-sync-paste').value = '';
-  } catch(e) {
-    statusEl.innerHTML = `<span style="color:#e05555">Eroare la parsare: ${e.message}. Verifică să fi copiat tot textul JSON.</span>`;
-  }
-};
-document.getElementById('api-sync-clear').onclick = clearApiSync;
 
 document.getElementById('reload-btn').onclick = async () => {
   const btn = document.getElementById('reload-btn');
