@@ -1530,6 +1530,13 @@ const NODE_MASTERY_XP = {
         return {t, xp:e.XP, credited: Math.round(Math.min(e.XP||0,450000)/150)};
       }).filter(Boolean).sort((a,b)=>b.credited-a.credited);
       console.log('[MasteryChecker debug] normalItemXP count=' + normalEntries.length + ' top15: ' + JSON.stringify(normalEntries.slice(0,15)));
+
+      // Broad search: ANY XPInfo entry mentioning Moa or Zanuka, regardless of
+      // path prefix — trying to find the Model/Head piece (the ONLY thing that
+      // should grant MOA mastery per the wiki) that isn't in the "Pets" bucket.
+      const moaZanukaAll = (inv.XPInfo||[]).filter(e => /moa|zanuka/i.test(e.ItemType||''))
+        .map(e=>({t:e.ItemType, xp:e.XP}));
+      console.log('[MasteryChecker debug] moaZanukaAll(' + moaZanukaAll.length + '): ' + JSON.stringify(moaZanukaAll));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
