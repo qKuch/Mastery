@@ -295,11 +295,20 @@ select.fb:focus{outline:none;border-color:#c8a84b}
           <button class="fb" id="api-sync-toggle" style="font-size:.72rem">🔄 Sincronizare API (XP 100% exact, opțional)</button>
           <div id="api-sync-panel" style="display:none;margin-top:.5rem;padding:.6rem;background:#15151c;border:1px solid #2a2a35;border-radius:6px;font-size:.72rem;color:#aaa;line-height:1.5">
             <div style="margin-bottom:.5rem">
-              1. Loghează-te pe <a href="https://www.warframe.com/" target="_blank" style="color:#7aeaaa">warframe.com</a>, apoi vizitează <a href="https://www.warframe.com/api/user-data" target="_blank" style="color:#7aeaaa">warframe.com/api/user-data</a> — caută <code>"user_id"</code>.<br>
-              2. Vizitează <code style="color:#e0e0e0">https://api.warframe.com/cdn/getProfileViewingData.php?playerId=ACCOUNT_ID</code> (înlocuiește ACCOUNT_ID) și salvează pagina ca fișier JSON (Ctrl+S).
+              Loghează-te pe <a href="https://www.warframe.com/" target="_blank" style="color:#7aeaaa">warframe.com</a>, apoi vizitează <a href="https://www.warframe.com/api/user-data" target="_blank" style="color:#7aeaaa">warframe.com/api/user-data</a> — caută <code>"user_id"</code>, copiază valoarea (Account ID).
             </div>
-            <input type="file" id="api-sync-file" accept="application/json" style="font-size:.7rem;color:#aaa">
-            <button class="fb" id="api-sync-clear" style="font-size:.7rem;padding:2px 8px;margin-left:.4rem">Șterge sincronizarea</button>
+            <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.5rem">
+              <input type="text" id="api-sync-accountid" placeholder="Account ID" style="width:14rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:3px 7px;font-size:.72rem">
+              <button class="fb" id="api-sync-fetch" style="font-size:.7rem;padding:2px 8px">Sincronizează automat</button>
+            </div>
+            <div id="api-sync-manual" style="display:none;border-top:1px solid #2a2a35;padding-top:.5rem;margin-top:.3rem">
+              <div style="margin-bottom:.4rem;color:#e05555">Fetch direct a eșuat (probabil CORS). Metodă manuală:</div>
+              <div style="margin-bottom:.4rem">
+                Vizitează <code style="color:#e0e0e0">https://api.warframe.com/cdn/getProfileViewingData.php?playerId=ACCOUNT_ID</code> (cu ID-ul tău), selectează tot textul (Ctrl+A, Ctrl+C), lipește-l într-un fișier .txt/.json salvat cu Notepad, apoi încarcă-l aici:
+              </div>
+              <input type="file" id="api-sync-file" accept="application/json,.json,.txt" style="font-size:.7rem;color:#aaa">
+            </div>
+            <button class="fb" id="api-sync-clear" style="font-size:.7rem;padding:2px 8px">Șterge sincronizarea</button>
             <div id="api-sync-status" style="margin-top:.5rem"></div>
           </div>
         </div>
@@ -1909,25 +1918,48 @@ function updateApiSyncStatus() {
     el.innerHTML = '<span style="color:#666">Nesincronizat — se folosește estimarea din .dat</span>';
   }
 }
+function applyProfileJson(json) {
+  const profileInv = json.Results ? json.Results[0] : json;
+  if(!profileInv || profileInv.PlayerLevel === undefined) {
+    throw new Error('Format JSON necunoscut — lipsește PlayerLevel. Asigură-te că e răspunsul de la getProfileViewingData.php.');
+  }
+  const xpResult = computeMasteryXP(profileInv);
+  const currentMR = profileInv.PlayerLevel || 0;
+  apiSyncResult = { currentMR, totalXP: xpResult.total, debug: xpResult, timestamp: Date.now() };
+  saveApiSyncToStorage(apiSyncResult);
+  console.log('[MasteryChecker debug] API sync: ' + JSON.stringify(xpResult));
+  if(calcData) initCalculator(calcData.currentMR, calcData.totalXP, calcData.allMissingItems);
+  updateApiSyncStatus();
+}
 async function handleApiSyncFile(file) {
   const statusEl = document.getElementById('api-sync-status');
   statusEl.innerHTML = '<span style="color:#c8a84b">Se procesează...</span>';
   try {
     const text = await file.text();
-    const json = JSON.parse(text);
-    const profileInv = json.Results ? json.Results[0] : json;
-    if(!profileInv || profileInv.PlayerLevel === undefined) {
-      throw new Error('Format JSON necunoscut — lipsește PlayerLevel. Asigură-te că ai încărcat răspunsul de la getProfileViewingData.php.');
-    }
-    const xpResult = computeMasteryXP(profileInv);
-    const currentMR = profileInv.PlayerLevel || 0;
-    apiSyncResult = { currentMR, totalXP: xpResult.total, debug: xpResult, timestamp: Date.now() };
-    saveApiSyncToStorage(apiSyncResult);
-    console.log('[MasteryChecker debug] API sync: ' + JSON.stringify(xpResult));
-    if(calcData) initCalculator(calcData.currentMR, calcData.totalXP, calcData.allMissingItems);
-    updateApiSyncStatus();
+    applyProfileJson(JSON.parse(text));
   } catch(e) {
     statusEl.innerHTML = `<span style="color:#e05555">Eroare: ${e.message}</span>`;
+  }
+}
+async function handleApiSyncFetch(accountId) {
+  const statusEl = document.getElementById('api-sync-status');
+  const manualEl = document.getElementById('api-sync-manual');
+  accountId = (accountId || '').trim();
+  if(!accountId) {
+    statusEl.innerHTML = '<span style="color:#e05555">Introdu Account ID-ul mai întâi.</span>';
+    return;
+  }
+  statusEl.innerHTML = '<span style="color:#c8a84b">Se încearcă sincronizare automată...</span>';
+  try {
+    const res = await fetch(`https://api.warframe.com/cdn/getProfileViewingData.php?playerId=${encodeURIComponent(accountId)}`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    applyProfileJson(json);
+    manualEl.style.display = 'none';
+  } catch(e) {
+    // Likely CORS or network block — fall back to the manual copy/upload method.
+    statusEl.innerHTML = `<span style="color:#e05555">Fetch direct a eșuat (${e.message || 'CORS probabil'}).</span>`;
+    manualEl.style.display = '';
   }
 }
 apiSyncResult = loadApiSyncFromStorage();
@@ -2472,6 +2504,9 @@ document.getElementById('api-sync-toggle').onclick = () => {
 };
 document.getElementById('api-sync-file').onchange = (e) => {
   if(e.target.files[0]) handleApiSyncFile(e.target.files[0]);
+};
+document.getElementById('api-sync-fetch').onclick = () => {
+  handleApiSyncFetch(document.getElementById('api-sync-accountid').value);
 };
 document.getElementById('api-sync-clear').onclick = clearApiSync;
 
