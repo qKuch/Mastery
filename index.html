@@ -1121,18 +1121,23 @@ function computeMasteryXP(inv) {
       // CONFIRMED via calamity-inc/browse.wf's own profile parser source
       // (profile.ts: `mission.Tier ? "✓" : ""` in their "Steel Path" column):
       // a truthy Tier field DOES mean this node was also cleared in Steel
-      // Path, and per the wiki, that grants the SAME node value again. Junction/
-      // hub entries also sometimes carry a Tier value for unrelated reasons,
-      // but since they aren't in NODE_MASTERY_XP, their base val is already 0,
-      // so the Steel Path bonus on them is harmlessly 0 too.
+      // Path, and per the wiki, that grants the SAME node value again.
+      // ALSO CONFIRMED via wiki: Steel Path has its own max pool of 27,569 —
+      // the SAME 14,569 (nodes) + 13,000 (junctions) as normal — meaning
+      // unlocking Steel Path in a region likely grants that region's junction
+      // credit again as a flat bonus (junctions aren't individually "replayed").
+      // HYPOTHESIS being tested: flat 13,000 once Steel Path is unlocked
+      // (detected via any Tier-true entry existing) + sum of Tier-true node values.
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
         const val = NODE_MASTERY_XP[tag] || 0;
         const steelPathBonus = m.Tier ? val : 0;
         return sum + val + steelPathBonus;
       }, 0);
+      const hasSteelPathProgress = (inv.Missions||[]).some(m => m.Tier);
+      const steelJunctionBonus = hasSteelPathProgress ? 13000 : 0;
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
-      const junctionXP = junctionCodes.size * 1000;
+      const junctionXP = junctionCodes.size * 1000 + steelJunctionBonus;
       const ps = inv.PlayerSkills || {};
       const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
       const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
