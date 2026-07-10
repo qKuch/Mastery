@@ -1467,14 +1467,16 @@ const NODE_MASTERY_XP = {
         const isNecramech = t.includes('/EntratiMech/');
         const isPlexus = t.includes('Plexus');
         // MOA/Zanuka "MoaPetComponents"/weapon paths are the pet's WEAPON, not
-        // its body — confirmed by direct data (Hextra/Cryoxion/Swarmer/Tazron/
-        // ZanukaPetMeleeWeapon), they were being wrongly capped at the 900k
-        // companion-body cap instead of the normal 450k weapon cap.
+        // its body. Confirmed via the personal Mastery Breakdown: there's no
+        // separate "Companion Weapons" category at all, meaning (like Kitgun
+        // Grip/Loader or Zaw Grip/Link) these simply don't grant Mastery XP —
+        // only the companion's own body does. Zero credit, not partial.
         const isPetWeapon = t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
-        const isWF = !isPetWeapon && (t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+        if(isPetWeapon) return sum;
+        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
-                     t.includes('/Vehicles/'));
+                     t.includes('/Vehicles/');
         let cap, cat;
         if(isNecramech){ cap = 1200000; cat='necramechXP'; }
         else if(isPlexus){ cap = 900000; cat='plexusXP'; }
@@ -1486,14 +1488,16 @@ const NODE_MASTERY_XP = {
         return sum + val;
       }, 0);
       // Lookup is comprehensive (169 mastery-granting nodes, sums to exactly
-      // 14,569 — verified against the wiki's official total). A node completed
-      // in BOTH normal AND Steel Path shows as ONE entry with Tier===1 set (not
-      // two separate entries), and counts TWICE (confirmed via wiki).
+      // 14,569 — verified against the wiki's official total).
+      // NOTE: the "Tier" field on Missions entries does NOT specifically mean
+      // Steel Path — it also appears on Junctions, Relay hubs, and hidden nodes,
+      // so it can't be used to detect Steel Path completion. The "8,901 Steel
+      // Path Missions" XP visible in the in-game breakdown currently has no
+      // known source field in this save data, so it's NOT included below —
+      // total will undershoot the real value by roughly that amount.
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
-        const val = NODE_MASTERY_XP[tag] || 0;
-        const steelPathBonus = (m.Tier === 1) ? val : 0;
-        return sum + val + steelPathBonus;
+        return sum + (NODE_MASTERY_XP[tag] || 0);
       }, 0);
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
       const junctionXP = junctionCodes.size * 1000;
@@ -1510,17 +1514,22 @@ const NODE_MASTERY_XP = {
       _xpDebug.total = totalMasteryXP;
       console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
 
-      // Verify isPetWeapon fix: list every entry it matches, with assigned value.
-      const petWeaponMatches = (inv.XPInfo||[]).filter(e=>{
+      // Top 15 normalItemXP contributors (by credited value) — real target for
+      // this category (Primary+Secondary+Melee+Kitguns+SentinelWeapons+Archgun+
+      // Archmelee+Amps, minus TIER40 weapons already counted separately) is
+      // 1,277,600. Compare against normalItemXP above to see the remaining gap.
+      const normalEntries = (inv.XPInfo||[]).map(e=>{
         const t = e.ItemType||'';
-        return t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
-      }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,450000)/150)}));
-      console.log('[MasteryChecker debug] petWeapons(' + petWeaponMatches.length + '): ' + JSON.stringify(petWeaponMatches));
-
-      // Steel Path bonus detail: Tier===1 entries and their node value.
-      const tier1 = (inv.Missions||[]).filter(m=>m.Tier===1).map(m=>({tag:m.Tag, val: NODE_MASTERY_XP[m.Tag||''] || 0}));
-      const tier1Sum = tier1.reduce((s,x)=>s+x.val,0);
-      console.log('[MasteryChecker debug] tier1(' + tier1.length + ', sum=' + tier1Sum + '): ' + JSON.stringify(tier1));
+        const isSkip = t.includes('/EntratiMech/') || t.includes('Plexus') ||
+          t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t) ||
+          t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+          t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
+          t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
+          t.includes('/Vehicles/') || TIER40_WEAPONS.has(t);
+        if(isSkip) return null;
+        return {t, xp:e.XP, credited: Math.round(Math.min(e.XP||0,450000)/150)};
+      }).filter(Boolean).sort((a,b)=>b.credited-a.credited);
+      console.log('[MasteryChecker debug] normalItemXP count=' + normalEntries.length + ' top15: ' + JSON.stringify(normalEntries.slice(0,15)));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
