@@ -1321,15 +1321,46 @@ async function process(file){
       console.log('[MasteryChecker debug] XPInfo ItemType path prefixes (top-level buckets):', pathBuckets);
     })();
 
-    // TEMP DEBUG 4 — PlayerSkills looks like the Intrinsics field (wiki calls
-    // Intrinsics a "skill point based system"). Dump as JSON strings so they're
-    // copy-pasteable instead of collapsed console objects.
-    (function debugXP4(){
-      console.log('[MasteryChecker debug] inv.PlayerSkills JSON:', JSON.stringify(inv.PlayerSkills));
-      console.log('[MasteryChecker debug] sample inv.Missions[0..2] JSON:', JSON.stringify((inv.Missions||[]).slice(0,3)));
-      console.log('[MasteryChecker debug] keys containing "Intrinsic" or "Skill":', Object.keys(inv).filter(k=>/intrinsic|skill/i.test(k)));
-      console.log('[MasteryChecker debug] keys containing "Drifter" or "Duviri":', Object.keys(inv).filter(k=>/drifter|duviri/i.test(k)));
-      console.log('[MasteryChecker debug] keys containing "CrewShip" or "Railjack":', Object.keys(inv).filter(k=>/crewship|railjack/i.test(k)));
+    // TEMP DEBUG 5 — separate normal vs Steel Path (Tier field) mission entries,
+    // and compute several total hypotheses (Railjack-only vs +Drifter intrinsics)
+    // to see which lands closest to the real in-game total.
+    (function debugXP5(){
+      const missions = inv.Missions||[];
+      const withTier = missions.filter(m=>m.Tier !== undefined && m.Tier !== null);
+      const withoutTier = missions.filter(m=>m.Tier === undefined || m.Tier === null);
+      console.log(`[MasteryChecker debug] Missions WITH Tier field (Steel Path?): ${withTier.length}`);
+      console.log(`[MasteryChecker debug] Missions WITHOUT Tier field (normal): ${withoutTier.length}`);
+      const tierValues = {};
+      withTier.forEach(m=>{ tierValues[m.Tier] = (tierValues[m.Tier]||0)+1; });
+      console.log('[MasteryChecker debug] distinct Tier values found:', tierValues);
+
+      const ps = inv.PlayerSkills || {};
+      const railjackRanks = (ps.LPS_TACTICAL||0)+(ps.LPS_PILOTING||0)+(ps.LPS_GUNNERY||0)+(ps.LPS_ENGINEERING||0)+(ps.LPS_COMMAND||0);
+      const drifterRanks = (ps.LPS_DRIFT_RIDING||0)+(ps.LPS_DRIFT_OPPORTUNITY||0)+(ps.LPS_DRIFT_COMBAT||0)+(ps.LPS_DRIFT_ENDURANCE||0);
+      console.log(`[MasteryChecker debug] Railjack intrinsic ranks: ${railjackRanks} → ${railjackRanks*1500} XP`);
+      console.log(`[MasteryChecker debug] Drifter intrinsic ranks: ${drifterRanks} → ${drifterRanks*1500} XP`);
+
+      // Base (current tool total, before intrinsics) — recompute independently here
+      const xpInfo = inv.XPInfo||[];
+      let wfCount=0, tier40Count=0, weaponCount=0;
+      xpInfo.forEach(e=>{
+        const t=e.ItemType||'';
+        const isWF = t.includes('/Powersuits/')||t.includes('/Sentinels/SentinelPowersuits/')||t.includes('/Game/KubrowPet/')||t.includes('/Game/CatbrowPet/')||t.includes('/Friendly/Pets/')||t.includes('/NeutralCreatures/')||t.includes('/Vehicles/');
+        if(isWF) wfCount++;
+        else { weaponCount++; if(TIER40_WEAPONS.has(t)) tier40Count++; }
+      });
+      const itemXP = wfCount*6000 + tier40Count*4000 + (weaponCount-tier40Count)*3000;
+      const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
+      const baseNoMissions = itemXP + junctionXP;
+
+      console.log(`[MasteryChecker debug] --- HYPOTHESES ---`);
+      console.log(`[MasteryChecker debug] base (items+junctions, no missions/intrinsics): ${baseNoMissions}`);
+      console.log(`[MasteryChecker debug] H1: base + all missions×100 (current formula): ${baseNoMissions + missions.length*100}`);
+      console.log(`[MasteryChecker debug] H2: base + normal-only×100 + Railjack intrinsics: ${baseNoMissions + withoutTier.length*100 + railjackRanks*1500}`);
+      console.log(`[MasteryChecker debug] H3: base + all missions×100 + Railjack intrinsics: ${baseNoMissions + missions.length*100 + railjackRanks*1500}`);
+      console.log(`[MasteryChecker debug] H4: base + all missions×100 + Railjack + Drifter intrinsics: ${baseNoMissions + missions.length*100 + railjackRanks*1500 + drifterRanks*1500}`);
+      console.log(`[MasteryChecker debug] H5: base + normal-only×100 + Railjack + Drifter intrinsics: ${baseNoMissions + withoutTier.length*100 + railjackRanks*1500 + drifterRanks*1500}`);
+      console.log(`[MasteryChecker debug] REAL TARGET (tell us this from in-game): compare above to your real total`);
     })();
     // totalMasteryXP, so the ~71k gap vs real in-game total can be isolated
     // exactly instead of hand-counting from a screenshot.
