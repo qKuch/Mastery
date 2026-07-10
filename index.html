@@ -1530,6 +1530,34 @@ async function process(file){
     (function debugXPFinal(){
       _xpDebug.total = totalMasteryXP;
       console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
+
+      // Category counts + any item NOT at full cap (partial credit) — to spot
+      // whether the remaining gap is from partially-leveled items (legit) or
+      // a missing/misclassified category.
+      const catCounts = { necramechXP:0, plexusXP:0, tier40XP:0, normalItemXP:0, wfXP:0 };
+      const partials = [];
+      (inv.XPInfo||[]).forEach(e=>{
+        const t = e.ItemType||'';
+        const xp = e.XP||0;
+        const isNecramech = t.includes('/EntratiMech/');
+        const isPlexus = t.includes('Plexus');
+        const isPetWeapon = t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
+        if(isPetWeapon) return;
+        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+                     t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
+                     t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
+                     t.includes('/Vehicles/');
+        let cap, cat;
+        if(isNecramech){ cap=1200000; cat='necramechXP'; }
+        else if(isPlexus){ cap=900000; cat='plexusXP'; }
+        else if(isWF){ cap=900000; cat='wfXP'; }
+        else if(TIER40_WEAPONS.has(t)){ cap=600000; cat='tier40XP'; }
+        else { cap=450000; cat='normalItemXP'; }
+        catCounts[cat]++;
+        if(xp < cap) partials.push({t, xp, cap, cat, credited: Math.round(xp/150)});
+      });
+      console.log('[MasteryChecker debug] category counts: ' + JSON.stringify(catCounts));
+      console.log('[MasteryChecker debug] partial-credit items (' + partials.length + '): ' + JSON.stringify(partials));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
