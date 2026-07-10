@@ -1505,46 +1505,22 @@ const NODE_MASTERY_XP = {
       return Math.round(itemXP) + Math.round(missionXP) + junctionXP + intrinsicsXP;
     })();
 
-    // DEBUG — one compact copy-pasteable JSON line with the full breakdown.
+    // DEBUG — compact copy-pasteable JSON lines, synced with current logic.
     (function debugXPFinal(){
       _xpDebug.total = totalMasteryXP;
       console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
 
-      // Isolate the wfXP overcounting: bucket every isWF-matched entry by WHICH
-      // substring trigger matched, with count+sum per bucket (compact).
-      const buckets = {};
-      (inv.XPInfo||[]).forEach(e=>{
+      // Verify isPetWeapon fix: list every entry it matches, with assigned value.
+      const petWeaponMatches = (inv.XPInfo||[]).filter(e=>{
         const t = e.ItemType||'';
-        if(t.includes('/EntratiMech/') || t.includes('Plexus')) return;
-        const triggers = [
-          ['Powersuits', '/Powersuits/'],
-          ['SentinelBody', '/Sentinels/SentinelPowersuits/'],
-          ['Kubrow', '/Game/KubrowPet/'],
-          ['Kavat', '/Game/CatbrowPet/'],
-          ['Pets', '/Friendly/Pets/'],
-          ['Neutral', '/NeutralCreatures/'],
-          ['Vehicles', '/Vehicles/'],
-        ];
-        const hit = triggers.find(([,sub]) => t.includes(sub));
-        if(!hit) return;
-        const cap = 900000;
-        const val = Math.min(e.XP||0, cap)/150;
-        const key = hit[0];
-        if(!buckets[key]) buckets[key] = {count:0, sum:0};
-        buckets[key].count++;
-        buckets[key].sum += val;
-      });
-      Object.keys(buckets).forEach(k=>{ buckets[k].sum = Math.round(buckets[k].sum); });
-      console.log('[MasteryChecker debug] ' + JSON.stringify(buckets));
+        return t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
+      }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,450000)/150)}));
+      console.log('[MasteryChecker debug] petWeapons(' + petWeaponMatches.length + '): ' + JSON.stringify(petWeaponMatches));
 
-      // List exact ItemTypes in the "Pets" bucket (/Friendly/Pets/) — real
-      // Companions total is 102,000 (17×6000) but we compute 120,000 (20×6000),
-      // so 3 of these entries shouldn't be counted as separate companions.
-      const petsList = (inv.XPInfo||[]).filter(e=>{
-        const t = e.ItemType||'';
-        return t.includes('/Friendly/Pets/') && !t.includes('/EntratiMech/') && !t.includes('Plexus');
-      }).map(e=>({t:e.ItemType, xp:e.XP}));
-      console.log('[MasteryChecker debug] ' + JSON.stringify(petsList));
+      // Steel Path bonus detail: Tier===1 entries and their node value.
+      const tier1 = (inv.Missions||[]).filter(m=>m.Tier===1).map(m=>({tag:m.Tag, val: NODE_MASTERY_XP[m.Tag||''] || 0}));
+      const tier1Sum = tier1.reduce((s,x)=>s+x.val,0);
+      console.log('[MasteryChecker debug] tier1(' + tier1.length + ', sum=' + tier1Sum + '): ' + JSON.stringify(tier1));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
