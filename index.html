@@ -1928,6 +1928,16 @@ function applyProfileJson(json) {
   if(!profileInv || profileInv.PlayerLevel === undefined) {
     throw new Error('Format JSON necunoscut — lipsește PlayerLevel. Asigură-te că e răspunsul de la getProfileViewingData.php.');
   }
+  // DIAGNOSTIC — the public profile API's data shape may not match the .dat
+  // save's XPInfo/Missions structure (this endpoint is meant for VIEWING other
+  // players, so it may only expose a curated subset). Log exactly what's here.
+  console.log('[MasteryChecker debug] profile top-level keys: ' + JSON.stringify(Object.keys(profileInv)));
+  console.log('[MasteryChecker debug] profile.XPInfo length: ' + ((profileInv.XPInfo||[]).length));
+  console.log('[MasteryChecker debug] profile.XPInfo sample: ' + JSON.stringify((profileInv.XPInfo||[]).slice(0,5)));
+  console.log('[MasteryChecker debug] profile.Missions length: ' + ((profileInv.Missions||[]).length));
+  console.log('[MasteryChecker debug] profile.PlayerSkills: ' + JSON.stringify(profileInv.PlayerSkills));
+  console.log('[MasteryChecker debug] profile.ClaimedJunctionChallengeRewards length: ' + ((profileInv.ClaimedJunctionChallengeRewards||[]).length));
+
   const xpResult = computeMasteryXP(profileInv);
   const currentMR = profileInv.PlayerLevel || 0;
   apiSyncResult = { currentMR, totalXP: xpResult.total, debug: xpResult, timestamp: Date.now() };
