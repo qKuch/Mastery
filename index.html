@@ -1949,18 +1949,33 @@ async function handleApiSyncFetch(accountId) {
     statusEl.innerHTML = '<span style="color:#e05555">Introdu Account ID-ul mai întâi.</span>';
     return;
   }
-  statusEl.innerHTML = '<span style="color:#c8a84b">Se încearcă sincronizare automată...</span>';
-  try {
-    const res = await fetch(`https://api.warframe.com/cdn/getProfileViewingData.php?playerId=${encodeURIComponent(accountId)}`);
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    applyProfileJson(json);
-    manualEl.style.display = 'none';
-  } catch(e) {
-    // Likely CORS or network block — fall back to the manual copy/upload method.
-    statusEl.innerHTML = `<span style="color:#e05555">Fetch direct a eșuat (${e.message || 'CORS probabil'}).</span>`;
-    manualEl.style.display = '';
+  const targetUrl = `https://api.warframe.com/cdn/getProfileViewingData.php?playerId=${encodeURIComponent(accountId)}`;
+  // Try a direct fetch first, then fall back through a couple of public CORS
+  // proxies (DE's API likely doesn't send Access-Control-Allow-Origin, so a
+  // plain browser fetch from our origin gets silently blocked) before finally
+  // giving up and showing the manual copy/paste method.
+  const attempts = [
+    { label: 'direct', url: targetUrl, unwrap: r => r.json() },
+    { label: 'corsproxy.io', url: `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`, unwrap: r => r.json() },
+    { label: 'allorigins.win', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, unwrap: r => r.json() },
+  ];
+  for(const attempt of attempts) {
+    statusEl.innerHTML = `<span style="color:#c8a84b">Se încearcă (${attempt.label})...</span>`;
+    try {
+      const res = await fetch(attempt.url);
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await attempt.unwrap(res);
+      applyProfileJson(json);
+      manualEl.style.display = 'none';
+      return;
+    } catch(e) {
+      console.log(`[MasteryChecker debug] API sync attempt "${attempt.label}" failed: ${e.message}`);
+      // try next attempt
+    }
   }
+  // All attempts failed — fall back to the manual copy/upload method.
+  statusEl.innerHTML = `<span style="color:#e05555">Sincronizarea automată a eșuat (CORS/rate-limit). Folosește metoda manuală mai jos.</span>`;
+  manualEl.style.display = '';
 }
 apiSyncResult = loadApiSyncFromStorage();
 
