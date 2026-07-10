@@ -1459,31 +1459,31 @@ const NODE_MASTERY_XP = {
   "SolNode195": 177,
 };
 
+    const _xpDebug = { necramechXP:0, plexusXP:0, tier40XP:0, normalItemXP:0, wfXP:0 };
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
         const xp = e.XP || 0;
         const isNecramech = t.includes('/EntratiMech/');
         const isPlexus = t.includes('Plexus');
-        const isWF = isPlexus || t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        let cap;
-        if(isNecramech) cap = 1200000; // rank 40
-        else if(isWF) cap = 900000; // rank 30 (Plexus included — confirmed via Paroxity/FrameHub: 200 XP/rank like Warframes)
-        else if(TIER40_WEAPONS.has(t)) cap = 600000; // rank 40
-        else cap = 450000; // rank 30
-        return sum + Math.min(xp, cap) / 150;
+        let cap, cat;
+        if(isNecramech){ cap = 1200000; cat='necramechXP'; }
+        else if(isPlexus){ cap = 900000; cat='plexusXP'; }
+        else if(isWF){ cap = 900000; cat='wfXP'; }
+        else if(TIER40_WEAPONS.has(t)){ cap = 600000; cat='tier40XP'; }
+        else { cap = 450000; cat='normalItemXP'; }
+        const val = Math.min(xp, cap) / 150;
+        _xpDebug[cat] += val;
+        return sum + val;
       }, 0);
       // Lookup is comprehensive (169 mastery-granting nodes, sums to exactly
-      // 14,569 — verified against the wiki's official total). Anything NOT in
-      // it (relays, PvP nodes, hidden/alt dark-sector nodes, etc.) genuinely
-      // gives 0 Mastery XP, so no fallback average needed anymore.
-      // A node completed in BOTH normal AND Steel Path shows as ONE entry with
-      // Tier===1 set (not two separate entries) — wiki confirms replaying a node
-      // in Steel Path grants "the mastery points earned for completing it"
-      // again, so that entry's value counts TWICE.
+      // 14,569 — verified against the wiki's official total). A node completed
+      // in BOTH normal AND Steel Path shows as ONE entry with Tier===1 set (not
+      // two separate entries), and counts TWICE (confirmed via wiki).
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
         const val = NODE_MASTERY_XP[tag] || 0;
@@ -1496,28 +1496,14 @@ const NODE_MASTERY_XP = {
       const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
       const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
       const intrinsicsXP = (railjackRanks + drifterRanks) * 1500;
+      Object.assign(_xpDebug, { itemXP:Math.round(itemXP), missionXP:Math.round(missionXP), junctionXP, intrinsicsXP, junctionCount:junctionCodes.size, railjackRanks, drifterRanks });
       return Math.round(itemXP) + Math.round(missionXP) + junctionXP + intrinsicsXP;
     })();
 
-    // TEMP DEBUG 11 — verify the Steel Path fix, and isolate the ~11k itemXP
-    // overcounting: list every entry hitting the new Plexus check, and every
-    // entry hitting TIER40_WEAPONS, so we can spot a misclassification.
-    (function debugXP11(){
-      const missions = inv.Missions||[];
-      let tier1Count=0, tier1Sum=0;
-      missions.forEach(m=>{
-        if(m.Tier === 1){ tier1Count++; tier1Sum += (NODE_MASTERY_XP[m.Tag||''] || 0); }
-      });
-      console.log(`[MasteryChecker debug] Tier===1 entries: ${tier1Count}, Steel Path bonus XP: ${tier1Sum}`);
-
-      const xpInfo = inv.XPInfo||[];
-      const plexusMatches = xpInfo.filter(e => (e.ItemType||'').includes('Plexus'));
-      console.log(`[MasteryChecker debug] Plexus-matched XPInfo entries (${plexusMatches.length}):`, JSON.stringify(plexusMatches));
-
-      const tier40Matches = xpInfo.filter(e => TIER40_WEAPONS.has(e.ItemType||''));
-      console.log(`[MasteryChecker debug] TIER40_WEAPONS-matched entries (${tier40Matches.length}):`, JSON.stringify(tier40Matches.map(e=>({t:e.ItemType, xp:e.XP}))));
-
-      console.log(`[MasteryChecker debug] FINAL totalMasteryXP:`, totalMasteryXP);
+    // DEBUG — one compact copy-pasteable JSON line with the full breakdown.
+    (function debugXPFinal(){
+      _xpDebug.total = totalMasteryXP;
+      console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
