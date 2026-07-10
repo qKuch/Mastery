@@ -1504,6 +1504,33 @@ const NODE_MASTERY_XP = {
     (function debugXPFinal(){
       _xpDebug.total = totalMasteryXP;
       console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
+
+      // Isolate the wfXP overcounting: bucket every isWF-matched entry by WHICH
+      // substring trigger matched, with count+sum per bucket (compact).
+      const buckets = {};
+      (inv.XPInfo||[]).forEach(e=>{
+        const t = e.ItemType||'';
+        if(t.includes('/EntratiMech/') || t.includes('Plexus')) return;
+        const triggers = [
+          ['Powersuits', '/Powersuits/'],
+          ['SentinelBody', '/Sentinels/SentinelPowersuits/'],
+          ['Kubrow', '/Game/KubrowPet/'],
+          ['Kavat', '/Game/CatbrowPet/'],
+          ['Pets', '/Friendly/Pets/'],
+          ['Neutral', '/NeutralCreatures/'],
+          ['Vehicles', '/Vehicles/'],
+        ];
+        const hit = triggers.find(([,sub]) => t.includes(sub));
+        if(!hit) return;
+        const cap = 900000;
+        const val = Math.min(e.XP||0, cap)/150;
+        const key = hit[0];
+        if(!buckets[key]) buckets[key] = {count:0, sum:0};
+        buckets[key].count++;
+        buckets[key].sum += val;
+      });
+      Object.keys(buckets).forEach(k=>{ buckets[k].sum = Math.round(buckets[k].sum); });
+      console.log('[MasteryChecker debug] ' + JSON.stringify(buckets));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
