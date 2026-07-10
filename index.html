@@ -1585,6 +1585,26 @@ async function process(file){
       });
       Object.keys(wfBuckets).forEach(k=>{ wfBuckets[k].sum = Math.round(wfBuckets[k].sum); });
       console.log('[MasteryChecker debug] wfXP buckets: ' + JSON.stringify(wfBuckets));
+
+      // List all "Powersuits" entries (Warframe+Archwing) to spot the +10,632
+      // overcount, and search broadly for any "PowerSuit"-named item that
+      // ISN'T being caught by our current classification at all (likely
+      // where the missing 3 companions, e.g. Hounds, are hiding).
+      const powersuitsList = (inv.XPInfo||[]).filter(e=>(e.ItemType||'').includes('/Powersuits/'))
+        .map(e=>({t:e.ItemType, xp:e.XP}));
+      console.log('[MasteryChecker debug] Powersuits list (' + powersuitsList.length + '): ' + JSON.stringify(powersuitsList));
+
+      const uncaught = (inv.XPInfo||[]).filter(e=>{
+        const t = e.ItemType||'';
+        if(!/powersuit/i.test(t)) return false;
+        const caught = t.includes('/EntratiMech/') || t.includes('Plexus') ||
+          t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+          t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
+          t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
+          t.includes('/Vehicles/');
+        return !caught;
+      }).map(e=>({t:e.ItemType, xp:e.XP}));
+      console.log('[MasteryChecker debug] uncaught PowerSuit-like items (' + uncaught.length + '): ' + JSON.stringify(uncaught));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
