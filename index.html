@@ -1537,6 +1537,17 @@ const NODE_MASTERY_XP = {
       const moaZanukaAll = (inv.XPInfo||[]).filter(e => /moa|zanuka/i.test(e.ItemType||''))
         .map(e=>({t:e.ItemType, xp:e.XP}));
       console.log('[MasteryChecker debug] moaZanukaAll(' + moaZanukaAll.length + '): ' + JSON.stringify(moaZanukaAll));
+
+      // Exhaustive Steel Path search: every distinct key across all Missions
+      // entries (in case there's a field beyond Tag/Completes/Tier we missed),
+      // plus a fresh full scan of top-level inv keys (in case something new
+      // appeared now that Steel Path / MR30 progress increased).
+      const missionKeys = new Set();
+      (inv.Missions||[]).forEach(m => Object.keys(m).forEach(k=>missionKeys.add(k)));
+      console.log('[MasteryChecker debug] all Missions keys: ' + JSON.stringify([...missionKeys]));
+      console.log('[MasteryChecker debug] ALL inv top-level keys: ' + JSON.stringify(Object.keys(inv)));
+      const relevantKeys = Object.keys(inv).filter(k=>/steel|path|node|tier|rank/i.test(k));
+      console.log('[MasteryChecker debug] inv keys matching steel/path/node/tier/rank: ' + JSON.stringify(relevantKeys));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
@@ -1893,7 +1904,7 @@ function renderMRProgress(currentMR, totalXP, missingItems){
   const nextRankXP = mrXpRequired(currentMR + 1);
   const xpInRank = nextRankXP - currentRankStartXP;
   const xpEarnedInRank = totalXP - currentRankStartXP;
-  const pctInRank = Math.min(100, (xpEarnedInRank / xpInRank) * 100).toFixed(1);
+  const pctInRank = Math.max(0, Math.min(100, (xpEarnedInRank / xpInRank) * 100)).toFixed(1);
   const xpToNext = Math.max(0, nextRankXP - totalXP);
 
   // Row 2 — aspirational: how far into [maxReachable → maxReachable+1] you'd land
@@ -1902,7 +1913,7 @@ function renderMRProgress(currentMR, totalXP, missingItems){
   const windowStartXP = mrXpRequired(maxReachable);
   const windowEndXP = mrXpRequired(maxReachable + 1);
   const windowSize = windowEndXP - windowStartXP;
-  const pctPotential = Math.min(100, ((maxXP - windowStartXP) / windowSize) * 100).toFixed(1);
+  const pctPotential = Math.max(0, Math.min(100, ((maxXP - windowStartXP) / windowSize) * 100)).toFixed(1);
   const pctCurrentInMax = Math.min(100, Math.max(0, (totalXP - windowStartXP) / windowSize) * 100).toFixed(1);
 
   // Build rank chips
@@ -1964,7 +1975,7 @@ function renderMRProgress(currentMR, totalXP, missingItems){
 function initCalculator(currentMR, totalXP, allMissingItems){
   calcData = { currentMR, totalXP, allMissingItems };
   renderMRProgress(currentMR, totalXP, allMissingItems);
-  const xpToNext = mrXpRequired(currentMR + 1) - totalXP;
+  const xpToNext = Math.max(0, mrXpRequired(currentMR + 1) - totalXP);
   document.getElementById('calc-current-display').innerHTML =
     `Rank curent: <strong>${mrName(currentMR)}</strong>
      &nbsp;·&nbsp; XP estimat: <strong>${totalXP.toLocaleString()}</strong>
