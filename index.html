@@ -1223,11 +1223,11 @@ async function process(file){
     window.__allItemsGlobal = __allItems;
     renderMaterials();
     // Calculate real total mastery XP from XPInfo
-    // BUG FIX: this used to assume every entry present in XPInfo is fully maxed
-    // (flat 3000/6000 MR XP each) — but XPInfo lists ANY item with affinity, including
-    // ones still mid-leveling. The real formula is min(raw affinity, cap) / 150,
-    // where cap = 450,000 for weapons (→ max 3000 MR XP) and 900,000 for
-    // Warframes/Companions (→ max 6000 MR XP) — using the item's actual e.XP.
+    // Weapons: 3000 MR XP each, Warframes/Companions: 6000 MR XP each.
+    // NOTE: tried making this proportional to e.XP (min(e.XP,cap)/150) assuming
+    // XPInfo lists partially-leveled items too, but that made totals LESS
+    // accurate against real in-game numbers — reverted to flat credit while the
+    // real source of the remaining gap is investigated (see debug below).
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
@@ -1235,13 +1235,34 @@ async function process(file){
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        const cap = isWF ? 900000 : 450000;
-        const raw = Math.min(e.XP || 0, cap);
-        return sum + (raw / 150);
+        return sum + (isWF ? 6000 : 3000);
       }, 0);
       const missionXP = (inv.Missions||[]).length * 100;
       const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
-      return Math.round(itemXP) + missionXP + junctionXP;
+      return itemXP + missionXP + junctionXP;
+    })();
+
+    // TEMP DEBUG — real total XP is off by a measurable amount (user-confirmed:
+    // ~75k too low). Dump samples to find the actual source: XPInfo entry shape,
+    // whether e.XP exists/what scale it's on, mission/junction counts, and any
+    // categories the isWF split might be missing (Archwing, Arch-Gun/Melee,
+    // Necramechs, Sentinel weapons vs Sentinel bodies, etc).
+    (function debugXP(){
+      const xpInfo = inv.XPInfo||[];
+      console.log(`[MasteryChecker debug] XPInfo entries: ${xpInfo.length}`);
+      console.log(`[MasteryChecker debug] sample XPInfo[0..4]:`, xpInfo.slice(0,5));
+      const withXPField = xpInfo.filter(e=>e.XP !== undefined && e.XP !== null);
+      console.log(`[MasteryChecker debug] entries WITH an XP field: ${withXPField.length} / ${xpInfo.length}`);
+      console.log(`[MasteryChecker debug] inv.Missions length: ${(inv.Missions||[]).length}`);
+      console.log(`[MasteryChecker debug] inv.ClaimedJunctionChallengeRewards length: ${(inv.ClaimedJunctionChallengeRewards||[]).length}`);
+      // Category breakdown of XPInfo ItemType paths, to spot anything uncounted/misclassified
+      const pathBuckets = {};
+      xpInfo.forEach(e=>{
+        const t = e.ItemType||'';
+        const seg = t.split('/').slice(0,4).join('/');
+        pathBuckets[seg] = (pathBuckets[seg]||0) + 1;
+      });
+      console.log('[MasteryChecker debug] XPInfo ItemType path prefixes (top-level buckets):', pathBuckets);
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
