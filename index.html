@@ -1531,6 +1531,15 @@ const NODE_MASTERY_XP = {
       });
       Object.keys(buckets).forEach(k=>{ buckets[k].sum = Math.round(buckets[k].sum); });
       console.log('[MasteryChecker debug] ' + JSON.stringify(buckets));
+
+      // List exact ItemTypes in the "Pets" bucket (/Friendly/Pets/) — real
+      // Companions total is 102,000 (17×6000) but we compute 120,000 (20×6000),
+      // so 3 of these entries shouldn't be counted as separate companions.
+      const petsList = (inv.XPInfo||[]).filter(e=>{
+        const t = e.ItemType||'';
+        return t.includes('/Friendly/Pets/') && !t.includes('/EntratiMech/') && !t.includes('Plexus');
+      }).map(e=>({t:e.ItemType, xp:e.XP}));
+      console.log('[MasteryChecker debug] ' + JSON.stringify(petsList));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
