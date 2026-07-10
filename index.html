@@ -185,23 +185,30 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .sell-setcount{font-size:.75rem;font-weight:600;color:#7aff9a;background:#1a4020;border:1px solid #2a6030;border-radius:4px;padding:2px 7px;white-space:nowrap}
 .sell-bps{font-size:.68rem;color:#555;margin-top:2px}
 /* MR Progress */
-.mr-progress{display:flex;flex-direction:column;gap:.4rem}
-.mr-bar-row{display:flex;align-items:center;gap:.6rem;font-size:.75rem}
-.mr-bar-label{color:#888;width:3.5rem;flex-shrink:0;text-align:right;font-size:.7rem}
-.mr-bar-track{flex:1;height:8px;background:#1a1a22;border-radius:4px;overflow:hidden}
-.mr-bar-fill{height:100%;border-radius:4px}
-.mr-bar-fill.current{background:linear-gradient(90deg,#c8a84b,#e8c86b)}
-.mr-bar-fill.potential{background:linear-gradient(90deg,#4a8a6a,#6adf9a)}
-.mr-bar-fill.remaining{background:#2a2a3a}
-.mr-bar-xp{color:#555;font-size:.67rem;width:7rem;flex-shrink:0;text-align:right}
-.mr-ranks{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.3rem}
+.mr-progress{display:flex;flex-direction:column;gap:.9rem}
+.mr-row{display:flex;flex-direction:column;gap:.35rem}
+.mr-row-head{display:flex;align-items:baseline;gap:.5rem}
+.mr-rank-badge{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:5px;letter-spacing:.02em;flex-shrink:0}
+.mr-rank-badge.current{background:linear-gradient(135deg,#3a2f10,#2a2408);color:#e8c86b;border:1px solid #6a5420}
+.mr-rank-badge.potential{background:linear-gradient(135deg,#0f2a1e,#0a2016);color:#7aeaaa;border:1px solid #2a6045;border-style:dashed}
+.mr-row-title{font-size:.72rem;color:#888;flex:1}
+.mr-row-pct{font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums}
+.mr-row-pct.current-pct{color:#e8c86b}
+.mr-row-pct.potential-pct{color:#7aeaaa}
+.mr-track{position:relative;height:14px;background:#15151c;border-radius:7px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.mr-fill{position:absolute;top:0;left:0;height:100%;border-radius:7px;transition:width .3s ease}
+.mr-fill-current{background:linear-gradient(90deg,#a8863a,#e8c86b);box-shadow:0 0 8px rgba(232,200,107,.35)}
+.mr-fill-potential{background:linear-gradient(90deg,#2e6a4a,#5ecf8f);opacity:.55}
+.mr-track-marker{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.4)}
+.mr-row-foot{display:flex;justify-content:space-between;font-size:.68rem;color:#666}
+.mr-ranks{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.1rem}
 .mr-rank-chip{font-size:.67rem;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
 .mr-rank-chip.done{background:#1a2010;color:#8acd5a;border-color:#3a5020}
-.mr-rank-chip.reachable{background:#2a2000;color:#c8a84b;border-color:#554400}
+.mr-rank-chip.iscurrent{background:#2a2000;color:#f0d080;border-color:#e8c86b;box-shadow:0 0 0 1px rgba(232,200,107,.3)}
+.mr-rank-chip.reachable{background:#0f2a1e;color:#7aeaaa;border-color:#2a6045}
 .mr-rank-chip.far{background:#111118;color:#444;border-color:#222228}
-.mr-legend{display:flex;gap:1rem;margin-top:.5rem;flex-wrap:wrap}
-.mr-legend-item{display:flex;align-items:center;gap:.35rem;font-size:.67rem;color:#666}
-.mr-legend-dot{width:10px;height:8px;border-radius:2px;flex-shrink:0}
+.mr-summary-line{font-size:.68rem;color:#666;border-top:1px solid #222228;padding-top:.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.mr-summary-line strong{color:#999;font-weight:600}
 /* Calculator */
 .calc-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}
 .calc-current{font-size:1rem;color:#ccc}
@@ -1579,11 +1586,11 @@ function renderMRProgress(currentMR, totalXP, missingItems){
   const potentialXP = missingItems.reduce((s, w) => s + xpPerItem(w), 0);
   const maxXP = totalXP + potentialXP;
 
-  // Find max reachable rank
+  // Find max reachable rank if every missing item got mastered
   let maxReachable = currentMR;
   while(mrXpRequired(maxReachable + 1) <= maxXP) maxReachable++;
 
-  // Progress WITHIN current rank (for yellow bar)
+  // Row 1 — actual progress within the current rank
   const currentRankStartXP = mrXpRequired(currentMR);
   const nextRankXP = mrXpRequired(currentMR + 1);
   const xpInRank = nextRankXP - currentRankStartXP;
@@ -1591,47 +1598,67 @@ function renderMRProgress(currentMR, totalXP, missingItems){
   const pctInRank = Math.min(100, (xpEarnedInRank / xpInRank) * 100).toFixed(1);
   const xpToNext = Math.max(0, nextRankXP - totalXP);
 
-  // For potential bar: show progress toward maxReachable rank
-  const maxReachableXP = mrXpRequired(maxReachable + 1); // XP cap for display
-  const pctPotential = Math.min(100, (maxXP / maxReachableXP) * 100).toFixed(1);
-  const pctCurrentInMax = Math.min(100, (totalXP / maxReachableXP) * 100).toFixed(1);
+  // Row 2 — aspirational: how far into [maxReachable → maxReachable+1] you'd land
+  // with everything mastered, and how much of that window your CURRENT xp alone
+  // already covers (so the bar reads as "gold = have, green = still to farm").
+  const windowStartXP = mrXpRequired(maxReachable);
+  const windowEndXP = mrXpRequired(maxReachable + 1);
+  const windowSize = windowEndXP - windowStartXP;
+  const pctPotential = Math.min(100, ((maxXP - windowStartXP) / windowSize) * 100).toFixed(1);
+  const pctCurrentInMax = Math.min(100, Math.max(0, (totalXP - windowStartXP) / windowSize) * 100).toFixed(1);
 
   // Build rank chips
   const maxDisplayRank = Math.min(Math.max(maxReachable + 1, currentMR + 3), 35);
   const chips = [];
   for(let r = Math.max(0, currentMR - 1); r <= maxDisplayRank; r++){
     const xpNeeded = mrXpRequired(r);
-    if(r <= currentMR) chips.push({r, cls:'done'});
+    if(r === currentMR) chips.push({r, cls:'iscurrent'});
+    else if(r < currentMR) chips.push({r, cls:'done'});
     else if(xpNeeded <= maxXP) chips.push({r, cls:'reachable'});
     else chips.push({r, cls:'far'});
   }
 
   wrap.innerHTML = `
     <div class="mr-progress">
-      <div class="mr-bar-row">
-        <span class="mr-bar-label">${mrName(currentMR)}</span>
-        <div class="mr-bar-track" title="Progres în rankul curent: ${pctInRank}%">
-          <div class="mr-bar-fill current" style="width:${pctInRank}%"></div>
+      <div class="mr-row">
+        <div class="mr-row-head">
+          <span class="mr-rank-badge current">${mrName(currentMR)}</span>
+          <span class="mr-row-title">Progres curent spre ${mrName(currentMR+1)}</span>
+          <span class="mr-row-pct current-pct">${pctInRank}%</span>
         </div>
-        <span class="mr-bar-xp">${xpToNext.toLocaleString()} XP până la ${mrName(currentMR+1)}</span>
-      </div>
-      <div class="mr-bar-row">
-        <span class="mr-bar-label" style="color:#6adf9a">${mrName(maxReachable)}</span>
-        <div class="mr-bar-track" style="position:relative" title="XP potențial față de ${mrName(maxReachable)}">
-          <div class="mr-bar-fill remaining" style="width:100%"></div>
-          <div class="mr-bar-fill potential" style="width:${pctPotential}%;position:absolute;top:0;left:0"></div>
-          <div class="mr-bar-fill current" style="width:${pctCurrentInMax}%;position:absolute;top:0;left:0"></div>
+        <div class="mr-track" title="${xpEarnedInRank.toLocaleString()} / ${xpInRank.toLocaleString()} XP în acest rank">
+          <div class="mr-fill mr-fill-current" style="width:${pctInRank}%"></div>
         </div>
-        <span class="mr-bar-xp" style="color:#6adf9a">+${potentialXP.toLocaleString()} XP potențial</span>
+        <div class="mr-row-foot">
+          <span>${totalXP.toLocaleString()} XP acumulat</span>
+          <span>${xpToNext.toLocaleString()} XP până la ${mrName(currentMR+1)}</span>
+        </div>
       </div>
+
+      <div class="mr-row">
+        <div class="mr-row-head">
+          <span class="mr-rank-badge potential">→ ${mrName(maxReachable)}</span>
+          <span class="mr-row-title">Potențial maxim dacă termini tot ce mai lipsește</span>
+          <span class="mr-row-pct potential-pct">+${potentialXP.toLocaleString()} XP</span>
+        </div>
+        <div class="mr-track" title="Ai deja ${pctCurrentInMax}% din intervalul ${mrName(maxReachable)}→${mrName(maxReachable+1)}; cu itemele lipsă ajungi la ${pctPotential}%">
+          <div class="mr-fill mr-fill-potential" style="width:${pctPotential}%"></div>
+          <div class="mr-fill mr-fill-current" style="width:${pctCurrentInMax}%"></div>
+        </div>
+        <div class="mr-row-foot">
+          <span>${missingItems.length} iteme nemasterizate</span>
+          <span>rămâi la ${mrName(maxReachable)} — nu ajungi la ${mrName(maxReachable+1)} doar din astea</span>
+        </div>
+      </div>
+
       <div class="mr-ranks">
         ${chips.map(({r,cls})=>`<span class="mr-rank-chip ${cls}" title="${mrXpRequired(r).toLocaleString()} XP">${mrName(r)}</span>`).join('')}
         ${maxReachable < 35 ? '<span style="color:#333;font-size:.7rem">···</span>' : ''}
       </div>
-      <div class="mr-legend">
-        <span class="mr-legend-item"><span class="mr-legend-dot" style="background:linear-gradient(90deg,#c8a84b,#e8c86b)"></span>Progres în rank (${pctInRank}% din ${mrName(currentMR)} → ${mrName(currentMR+1)})</span>
-        <span class="mr-legend-item"><span class="mr-legend-dot" style="background:linear-gradient(90deg,#4a8a6a,#6adf9a)"></span>XP potențial din ${missingItems.length} iteme lipsă (+${potentialXP.toLocaleString()})</span>
-        <span class="mr-legend-item" style="margin-left:auto;color:#888">Total XP: ${totalXP.toLocaleString()}</span>
+
+      <div class="mr-summary-line">
+        <span>Rank curent: <strong>${mrName(currentMR)}</strong> (${totalXP.toLocaleString()} XP)</span>
+        <span>Cu tot ce mai lipsește: <strong>${mrName(maxReachable)}</strong> (${maxXP.toLocaleString()} XP)</span>
       </div>
     </div>`;
 }
