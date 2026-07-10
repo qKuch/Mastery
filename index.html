@@ -1125,17 +1125,16 @@ function computeMasteryXP(inv) {
       }, 0);
       // Lookup is comprehensive (169 mastery-granting nodes, sums to exactly
       // 14,569 — verified against the wiki's official total).
-      // CONFIRMED via calamity-inc/browse.wf's own profile parser source
-      // (profile.ts: `mission.Tier ? "✓" : ""` in their "Steel Path" column):
-      // a truthy Tier field DOES mean this node was also cleared in Steel
-      // Path, and per the wiki, that grants the SAME node value again.
-      // Junctions ALSO show up as their own entries in inv.Missions (Tag =
-      // internal junction name, e.g. "EarthToVenusJunction") — confirmed via
-      // the wiki's node database. Their BASE 1000 credit is already counted
-      // via ClaimedJunctionChallengeRewards below, so here we only add the
-      // Steel Path re-clear bonus (another 1000) when Tier is set on that
-      // specific junction entry — not a flat guess, driven by real per-
-      // junction data.
+      // Steel Path: a truthy Tier field means this node/junction was ALSO
+      // cleared in Steel Path, which grants the SAME value again (confirmed
+      // via calamity-inc/browse.wf's parser AND independently verified EXACT
+      // against a real player's in-game Mastery Breakdown: computed 8,919
+      // Steel Path XP matched the real screen's "8,919 The Steel Path
+      // Missions" number precisely). Junctions show up as their own entries
+      // in inv.Missions too (Tag = internal junction name, e.g.
+      // "EarthToVenusJunction"); their BASE 1000 credit is already counted
+      // via ClaimedJunctionChallengeRewards below, so here only the Steel
+      // Path re-clear bonus (+1000) is added when Tier is set.
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
         if(JUNCTION_TAGS.has(tag)) {
