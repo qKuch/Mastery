@@ -1265,6 +1265,36 @@ async function process(file){
       console.log('[MasteryChecker debug] XPInfo ItemType path prefixes (top-level buckets):', pathBuckets);
     })();
 
+    // TEMP DEBUG 2 — precisely compute the isWF split and each contributor to
+    // totalMasteryXP, so the ~71k gap vs real in-game total can be isolated
+    // exactly instead of hand-counting from a screenshot.
+    (function debugXP2(){
+      const xpInfo = inv.XPInfo||[];
+      let wfCount=0, weaponCount=0;
+      const wfEntries=[];
+      xpInfo.forEach(e=>{
+        const t = e.ItemType||'';
+        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
+                     t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
+                     t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
+                     t.includes('/Vehicles/');
+        if(isWF){ wfCount++; wfEntries.push(t); } else { weaponCount++; }
+      });
+      const itemXP2 = wfCount*6000 + weaponCount*3000;
+      const missionXP2 = (inv.Missions||[]).length * 100;
+      const junctionXP2 = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
+      console.log(`[MasteryChecker debug] isWF=true count: ${wfCount} (×6000 = ${wfCount*6000})`);
+      console.log(`[MasteryChecker debug] isWF=false count: ${weaponCount} (×3000 = ${weaponCount*3000})`);
+      console.log(`[MasteryChecker debug] itemXP total: ${itemXP2}`);
+      console.log(`[MasteryChecker debug] missionXP: ${missionXP2} | junctionXP: ${junctionXP2}`);
+      console.log(`[MasteryChecker debug] GRAND TOTAL (flat formula): ${itemXP2+missionXP2+junctionXP2}`);
+      console.log(`[MasteryChecker debug] all isWF=true ItemTypes:`, wfEntries);
+      const typeCounts = {};
+      xpInfo.forEach(e=>{ const t=e.ItemType||''; typeCounts[t]=(typeCounts[t]||0)+1; });
+      const dupes = Object.entries(typeCounts).filter(([k,v])=>v>1);
+      console.log(`[MasteryChecker debug] duplicate ItemType entries in XPInfo: ${dupes.length}`, dupes);
+    })();
+
     // PlayerLevel in lastData = current Mastery Rank
     const currentMR = inv.PlayerLevel || 0;
     initCalculator(currentMR, totalMasteryXP, notMastered);
