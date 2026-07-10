@@ -1558,6 +1558,33 @@ async function process(file){
       });
       console.log('[MasteryChecker debug] category counts: ' + JSON.stringify(catCounts));
       console.log('[MasteryChecker debug] partial-credit items (' + partials.length + '): ' + JSON.stringify(partials));
+
+      // Bucket wfXP items by WHICH trigger matched, to compare against real
+      // per-category counts from the in-game breakdown (Warframes/Sentinels/
+      // Companions/Archwing).
+      const wfBuckets = {};
+      (inv.XPInfo||[]).forEach(e=>{
+        const t = e.ItemType||'';
+        if(t.includes('/EntratiMech/') || t.includes('Plexus')) return;
+        if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return;
+        const triggers = [
+          ['Powersuits', '/Powersuits/'],
+          ['SentinelBody', '/Sentinels/SentinelPowersuits/'],
+          ['Kubrow', '/Game/KubrowPet/'],
+          ['Kavat', '/Game/CatbrowPet/'],
+          ['Pets', '/Friendly/Pets/'],
+          ['Neutral', '/NeutralCreatures/'],
+          ['Vehicles', '/Vehicles/'],
+        ];
+        const hit = triggers.find(([,sub]) => t.includes(sub));
+        if(!hit) return;
+        const key = hit[0];
+        if(!wfBuckets[key]) wfBuckets[key] = {count:0, sum:0};
+        wfBuckets[key].count++;
+        wfBuckets[key].sum += Math.min(e.XP||0, 900000)/150;
+      });
+      Object.keys(wfBuckets).forEach(k=>{ wfBuckets[k].sum = Math.round(wfBuckets[k].sum); });
+      console.log('[MasteryChecker debug] wfXP buckets: ' + JSON.stringify(wfBuckets));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
