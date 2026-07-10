@@ -1296,7 +1296,12 @@ async function process(file){
         else cap = 450000; // rank 30
         return sum + Math.min(xp, cap) / 150;
       }, 0);
-      const missionXP = (inv.Missions||[]).length * 100;
+      // Each node gives a DIFFERENT fixed amount (not flat 100) — confirmed via
+      // wiki's reference table: 241 nodes total exactly 14,569 XP (avg ~60.45).
+      // Using the average is an approximation (exact would need a 241-node
+      // lookup table); it's much closer than the flat-100 assumption though.
+      const AVG_XP_PER_NODE = 14569 / 241;
+      const missionXP = Math.round((inv.Missions||[]).length * AVG_XP_PER_NODE);
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
       const junctionXP = junctionCodes.size * 1000;
       const ps = inv.PlayerSkills || {};
