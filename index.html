@@ -1088,6 +1088,13 @@ const NODE_MASTERY_XP = {
 };
 
 
+const JUNCTION_TAGS = new Set([
+  "VenusToMercuryJunction","EarthToVenusJunction","EarthToMarsJunction",
+  "MarsToCeresJunction","MarsToPhobosJunction","CeresToJupiterJunction",
+  "JupiterToEuropaJunction","JupiterToSaturnJunction","SaturnToUranusJunction",
+  "UranusToNeptuneJunction","NeptuneToPlutoJunction","PlutoToErisJunction",
+  "ErisToSednaJunction",
+]);
 function computeMasteryXP(inv) {
   const _xpDebug = { necramechXP:0, plexusXP:0, tier40XP:0, normalItemXP:0, wfXP:0 };
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
@@ -1122,22 +1129,24 @@ function computeMasteryXP(inv) {
       // (profile.ts: `mission.Tier ? "✓" : ""` in their "Steel Path" column):
       // a truthy Tier field DOES mean this node was also cleared in Steel
       // Path, and per the wiki, that grants the SAME node value again.
-      // ALSO CONFIRMED via wiki: Steel Path has its own max pool of 27,569 —
-      // the SAME 14,569 (nodes) + 13,000 (junctions) as normal — meaning
-      // unlocking Steel Path in a region likely grants that region's junction
-      // credit again as a flat bonus (junctions aren't individually "replayed").
-      // HYPOTHESIS being tested: flat 13,000 once Steel Path is unlocked
-      // (detected via any Tier-true entry existing) + sum of Tier-true node values.
+      // Junctions ALSO show up as their own entries in inv.Missions (Tag =
+      // internal junction name, e.g. "EarthToVenusJunction") — confirmed via
+      // the wiki's node database. Their BASE 1000 credit is already counted
+      // via ClaimedJunctionChallengeRewards below, so here we only add the
+      // Steel Path re-clear bonus (another 1000) when Tier is set on that
+      // specific junction entry — not a flat guess, driven by real per-
+      // junction data.
       const missionXP = (inv.Missions||[]).reduce((sum, m) => {
         const tag = m.Tag || '';
+        if(JUNCTION_TAGS.has(tag)) {
+          return sum + (m.Tier ? 1000 : 0); // Steel Path re-clear bonus only
+        }
         const val = NODE_MASTERY_XP[tag] || 0;
         const steelPathBonus = m.Tier ? val : 0;
         return sum + val + steelPathBonus;
       }, 0);
-      const hasSteelPathProgress = (inv.Missions||[]).some(m => m.Tier);
-      const steelJunctionBonus = hasSteelPathProgress ? 13000 : 0;
       const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
-      const junctionXP = junctionCodes.size * 1000 + steelJunctionBonus;
+      const junctionXP = junctionCodes.size * 1000;
       const ps = inv.PlayerSkills || {};
       const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
       const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
@@ -1518,56 +1527,10 @@ async function process(file){
     const _xpDebug = computeMasteryXP(inv);
     const totalMasteryXP = _xpDebug.total;
 
-    // DEBUG — compact copy-pasteable JSON lines, synced with current logic.
+    // DEBUG — one compact copy-pasteable JSON line with the full XP breakdown.
     (function debugXPFinal(){
       _xpDebug.total = totalMasteryXP;
       console.log('[MasteryChecker debug] ' + JSON.stringify(_xpDebug));
-
-      // Top 15 normalItemXP contributors (by credited value) — real target for
-      // this category (Primary+Secondary+Melee+Kitguns+SentinelWeapons+Archgun+
-      // Archmelee+Amps, minus TIER40 weapons already counted separately) is
-      // 1,277,600. Compare against normalItemXP above to see the remaining gap.
-      const normalEntries = (inv.XPInfo||[]).map(e=>{
-        const t = e.ItemType||'';
-        const isSkip = t.includes('/EntratiMech/') || t.includes('Plexus') ||
-          t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t) ||
-          t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
-          t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
-          t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
-          t.includes('/Vehicles/') || TIER40_WEAPONS.has(t);
-        if(isSkip) return null;
-        return {t, xp:e.XP, credited: Math.round(Math.min(e.XP||0,450000)/150)};
-      }).filter(Boolean).sort((a,b)=>b.credited-a.credited);
-      console.log('[MasteryChecker debug] normalItemXP count=' + normalEntries.length + ' top15: ' + JSON.stringify(normalEntries.slice(0,15)));
-
-      // Broad search: ANY XPInfo entry mentioning Moa or Zanuka, regardless of
-      // path prefix — trying to find the Model/Head piece (the ONLY thing that
-      // should grant MOA mastery per the wiki) that isn't in the "Pets" bucket.
-      const moaZanukaAll = (inv.XPInfo||[]).filter(e => /moa|zanuka/i.test(e.ItemType||''))
-        .map(e=>({t:e.ItemType, xp:e.XP}));
-      console.log('[MasteryChecker debug] moaZanukaAll(' + moaZanukaAll.length + '): ' + JSON.stringify(moaZanukaAll));
-
-      // Check PeriodicMissionCompletions — unexplored so far, name sounds
-      // Steel-Path/Sortie-adjacent. Also recheck Tier value distribution.
-      console.log('[MasteryChecker debug] PeriodicMissionCompletions: ' + JSON.stringify(inv.PeriodicMissionCompletions));
-      const tierDist = {};
-      (inv.Missions||[]).forEach(m=>{ const k=String(m.Tier); tierDist[k]=(tierDist[k]||0)+1; });
-      console.log('[MasteryChecker debug] Tier value distribution: ' + JSON.stringify(tierDist));
-      // Sum of ALL node values (if EVERY node were also done in Steel Path) vs
-      // what we currently detect, to see how much headroom exists.
-      const allNodesSum = Object.values(NODE_MASTERY_XP).reduce((a,b)=>a+b,0);
-      console.log('[MasteryChecker debug] sum of ALL known node values (max possible Steel Path bonus): ' + allNodesSum);
-
-      // Exhaustive Steel Path search: every distinct key across all Missions
-      // entries (in case there's a field beyond Tag/Completes/Tier we missed),
-      // plus a fresh full scan of top-level inv keys (in case something new
-      // appeared now that Steel Path / MR30 progress increased).
-      const missionKeys = new Set();
-      (inv.Missions||[]).forEach(m => Object.keys(m).forEach(k=>missionKeys.add(k)));
-      console.log('[MasteryChecker debug] all Missions keys: ' + JSON.stringify([...missionKeys]));
-      console.log('[MasteryChecker debug] ALL inv top-level keys: ' + JSON.stringify(Object.keys(inv)));
-      const relevantKeys = Object.keys(inv).filter(k=>/steel|path|node|tier|rank/i.test(k));
-      console.log('[MasteryChecker debug] inv keys matching steel/path/node/tier/rank: ' + JSON.stringify(relevantKeys));
     })();
 
     // PlayerLevel in lastData = current Mastery Rank
