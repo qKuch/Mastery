@@ -1222,12 +1222,67 @@ async function process(file){
     allMaterials = buildMaterials(notMastered, miscItems, ownedItems, allPendingBPs, __allItems, inProgressBPs);
     window.__allItemsGlobal = __allItems;
     renderMaterials();
+    // Rank-40 weapons (Kuva/Tenet/Coda Lich/Sister weapons) cap at 4000 MR XP
+    // (100 XP × 40 ranks) instead of the normal 3000 (100 × 30) — confirmed via
+    // WFCD's maxLevelCap field, since matching by name/path substring is NOT
+    // reliable (e.g. Tenet Quanta's path has no "Tenet" in it at all).
+    const TIER40_WEAPONS = new Set([
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEArcaPlasmor/CrpBEArcaPlasmor',
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEFerrox/CrpBEFerrox',
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEFluxRifle/CrpBEFluxRifle',
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEGlaxion/CrpBEGlaxion',
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEQuanta/CrpBEQuanta',
+  '/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBETetra/CrpBETetra',
+  '/Lotus/Weapons/Corpus/BoardExec/Secondary/CrpBECycron/CrpBECycron',
+  '/Lotus/Weapons/Corpus/BoardExec/Secondary/CrpBEDetron/CrpBEDetron',
+  '/Lotus/Weapons/Corpus/BoardExec/Secondary/CrpBEPlinx/CrpBEPlinxWeapon',
+  '/Lotus/Weapons/Corpus/LongGuns/CrpBriefcaseLauncher/CrpBriefcaseLauncher',
+  '/Lotus/Weapons/Corpus/Melee/CrpBriefcase2HKatana/CrpBriefcase2HKatana',
+  '/Lotus/Weapons/Corpus/Melee/CrpBriefcaseScythe/CrpBriefcaseScythe',
+  '/Lotus/Weapons/Corpus/Melee/ShieldAndSword/CrpHammerShield/CrpHammerShield',
+  '/Lotus/Weapons/Corpus/Pistols/CrpBriefcaseAkimbo/CrpBriefcaseAkimboPistol',
+  '/Lotus/Weapons/Corpus/Pistols/CrpIgniterPistol/CrpIgniterPistol',
+  '/Lotus/Weapons/Grineer/Bows/GrnBow/GrnBowWeapon',
+  '/Lotus/Weapons/Grineer/HeavyWeapons/GrnHeavyGrenadeLauncher',
+  '/Lotus/Weapons/Grineer/KuvaLich/HeavyWeapons/Grattler/KuvaGrattler',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Drakgoon/KuvaDrakgoon',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Hek/KuvaHekWeapon',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Hind/KuvaHind',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Karak/KuvaKarak',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Kohm/KuvaKohm',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Ogris/KuvaOgris',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Quartakk/KuvaQuartakk',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Sobek/KuvaSobek',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Tonkor/KuvaTonkor',
+  '/Lotus/Weapons/Grineer/KuvaLich/LongGuns/Zarr/KuvaZarr',
+  '/Lotus/Weapons/Grineer/KuvaLich/Melee/Ghoulsaw/KuvaGhoulSaw',
+  '/Lotus/Weapons/Grineer/KuvaLich/Secondaries/Brakk/KuvaBrakk',
+  '/Lotus/Weapons/Grineer/KuvaLich/Secondaries/Kraken/KuvaKraken',
+  '/Lotus/Weapons/Grineer/KuvaLich/Secondaries/Nukor/KuvaNukor',
+  '/Lotus/Weapons/Grineer/KuvaLich/Secondaries/Seer/KuvaSeer',
+  '/Lotus/Weapons/Grineer/KuvaLich/Secondaries/Stubba/KuvaStubba',
+  '/Lotus/Weapons/Grineer/LongGuns/GrnKuvaLichRifle/GrnKuvaLichRifleWeapon',
+  '/Lotus/Weapons/Grineer/Melee/GrnKuvaLichScythe/GrnKuvaLichScytheWeapon',
+  '/Lotus/Weapons/Infested/InfestedLich/LongGuns/1999InfShotgun/1999InfShotgunWeapon',
+  '/Lotus/Weapons/Infested/InfestedLich/LongGuns/CodaBubonico/CodaBubonicoCannon',
+  '/Lotus/Weapons/Infested/InfestedLich/LongGuns/CodaHema',
+  '/Lotus/Weapons/Infested/InfestedLich/LongGuns/CodaSporothrix',
+  '/Lotus/Weapons/Infested/InfestedLich/LongGuns/CodaSynapse',
+  '/Lotus/Weapons/Infested/InfestedLich/Melee/CodaCaustacyst/CodaCaustacyst',
+  '/Lotus/Weapons/Infested/InfestedLich/Melee/CodaHirudo',
+  '/Lotus/Weapons/Infested/InfestedLich/Melee/CodaMire',
+  '/Lotus/Weapons/Infested/InfestedLich/Melee/CodaPathocyst/CodaPathocyst',
+  '/Lotus/Weapons/Infested/InfestedLich/Melee/InfestedHammer/InfLichHammerWeapon',
+  '/Lotus/Weapons/Infested/InfestedLich/Pistols/1999InfSporePistol/1999InfSporePistolWeapon',
+  '/Lotus/Weapons/Infested/InfestedLich/Pistols/CodaCatabolyst',
+  '/Lotus/Weapons/Infested/InfestedLich/Pistols/CodaPox',
+  '/Lotus/Weapons/Infested/InfestedLich/Pistols/CodaTysis',
+  '/Lotus/Weapons/Orokin/BallasSword/BallasSwordWeapon',
+  '/Lotus/Weapons/Tenno/Melee/Swords/CrpBigSlash/CrpBigSlash',
+]);
+
     // Calculate real total mastery XP from XPInfo
-    // Weapons: 3000 MR XP each, Warframes/Companions: 6000 MR XP each.
-    // NOTE: tried making this proportional to e.XP (min(e.XP,cap)/150) assuming
-    // XPInfo lists partially-leveled items too, but that made totals LESS
-    // accurate against real in-game numbers — reverted to flat credit while the
-    // real source of the remaining gap is investigated (see debug below).
+    // Weapons: 3000 MR XP each (4000 for TIER40_WEAPONS), Warframes/Companions: 6000 MR XP each.
     const totalMasteryXP = (()=>{
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
@@ -1235,7 +1290,8 @@ async function process(file){
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        return sum + (isWF ? 6000 : 3000);
+        if(isWF) return sum + 6000;
+        return sum + (TIER40_WEAPONS.has(t) ? 4000 : 3000);
       }, 0);
       const missionXP = (inv.Missions||[]).length * 100;
       const junctionXP = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
@@ -1270,25 +1326,28 @@ async function process(file){
     // exactly instead of hand-counting from a screenshot.
     (function debugXP2(){
       const xpInfo = inv.XPInfo||[];
-      let wfCount=0, weaponCount=0;
-      const wfEntries=[];
+      let wfCount=0, weaponCount=0, tier40Count=0;
+      const wfEntries=[], tier40Entries=[];
       xpInfo.forEach(e=>{
         const t = e.ItemType||'';
         const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
                      t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
                      t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
                      t.includes('/Vehicles/');
-        if(isWF){ wfCount++; wfEntries.push(t); } else { weaponCount++; }
+        if(isWF){ wfCount++; wfEntries.push(t); }
+        else if(TIER40_WEAPONS.has(t)){ tier40Count++; weaponCount++; tier40Entries.push(t); }
+        else { weaponCount++; }
       });
-      const itemXP2 = wfCount*6000 + weaponCount*3000;
+      const itemXP2 = wfCount*6000 + tier40Count*4000 + (weaponCount-tier40Count)*3000;
       const missionXP2 = (inv.Missions||[]).length * 100;
       const junctionXP2 = (inv.ClaimedJunctionChallengeRewards||[]).length * 1000;
       console.log(`[MasteryChecker debug] isWF=true count: ${wfCount} (×6000 = ${wfCount*6000})`);
-      console.log(`[MasteryChecker debug] isWF=false count: ${weaponCount} (×3000 = ${weaponCount*3000})`);
+      console.log(`[MasteryChecker debug] tier40 (Kuva/Tenet/Coda) count: ${tier40Count} (×4000 = ${tier40Count*4000})`);
+      console.log(`[MasteryChecker debug] normal weapon count: ${weaponCount-tier40Count} (×3000 = ${(weaponCount-tier40Count)*3000})`);
       console.log(`[MasteryChecker debug] itemXP total: ${itemXP2}`);
       console.log(`[MasteryChecker debug] missionXP: ${missionXP2} | junctionXP: ${junctionXP2}`);
-      console.log(`[MasteryChecker debug] GRAND TOTAL (flat formula): ${itemXP2+missionXP2+junctionXP2}`);
-      console.log(`[MasteryChecker debug] all isWF=true ItemTypes:`, wfEntries);
+      console.log(`[MasteryChecker debug] GRAND TOTAL (tier40-aware formula): ${itemXP2+missionXP2+junctionXP2}`);
+      console.log(`[MasteryChecker debug] tier40 ItemTypes found:`, tier40Entries);
       const typeCounts = {};
       xpInfo.forEach(e=>{ const t=e.ItemType||''; typeCounts[t]=(typeCounts[t]||0)+1; });
       const dupes = Object.entries(typeCounts).filter(([k,v])=>v>1);
