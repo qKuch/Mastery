@@ -1321,17 +1321,15 @@ async function process(file){
       console.log('[MasteryChecker debug] XPInfo ItemType path prefixes (top-level buckets):', pathBuckets);
     })();
 
-    // TEMP DEBUG 3 — inspect the actual Missions/SteelPath data shape, since the
-    // wiki confirms Steel Path completions grant separate Mastery XP that isn't
-    // accounted for at all yet, and normal nodes may not be a flat 100 each.
-    (function debugXP3(){
-      console.log('[MasteryChecker debug] sample inv.Missions[0..4]:', (inv.Missions||[]).slice(0,5));
-      console.log('[MasteryChecker debug] inv keys containing "steel" or "Steel":', Object.keys(inv).filter(k=>/steel/i.test(k)));
-      console.log('[MasteryChecker debug] inv keys containing "Mission":', Object.keys(inv).filter(k=>/mission/i.test(k)));
-      console.log('[MasteryChecker debug] inv keys containing "Junction":', Object.keys(inv).filter(k=>/junction/i.test(k)));
-      console.log('[MasteryChecker debug] sample inv.ClaimedJunctionChallengeRewards[0..4]:', (inv.ClaimedJunctionChallengeRewards||[]).slice(0,5));
-      // Full list of top-level inv keys, to spot anything else mastery-relevant
-      console.log('[MasteryChecker debug] ALL inv top-level keys:', Object.keys(inv));
+    // TEMP DEBUG 4 — PlayerSkills looks like the Intrinsics field (wiki calls
+    // Intrinsics a "skill point based system"). Dump as JSON strings so they're
+    // copy-pasteable instead of collapsed console objects.
+    (function debugXP4(){
+      console.log('[MasteryChecker debug] inv.PlayerSkills JSON:', JSON.stringify(inv.PlayerSkills));
+      console.log('[MasteryChecker debug] sample inv.Missions[0..2] JSON:', JSON.stringify((inv.Missions||[]).slice(0,3)));
+      console.log('[MasteryChecker debug] keys containing "Intrinsic" or "Skill":', Object.keys(inv).filter(k=>/intrinsic|skill/i.test(k)));
+      console.log('[MasteryChecker debug] keys containing "Drifter" or "Duviri":', Object.keys(inv).filter(k=>/drifter|duviri/i.test(k)));
+      console.log('[MasteryChecker debug] keys containing "CrewShip" or "Railjack":', Object.keys(inv).filter(k=>/crewship|railjack/i.test(k)));
     })();
     // totalMasteryXP, so the ~71k gap vs real in-game total can be isolated
     // exactly instead of hand-counting from a screenshot.
