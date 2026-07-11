@@ -60,12 +60,14 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .grid::-webkit-scrollbar{width:5px}
 .grid::-webkit-scrollbar-track{background:#111;border-radius:3px}
 .grid::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:3px}
-.wcard{background:#111116;border:1px solid #2a2a30;border-radius:6px;padding:.55rem .75rem}
+.wcard{background:#111116;border:1px solid #2a2a30;border-radius:6px;padding:.55rem .75rem;transition:transform .15s ease,box-shadow .15s ease}
+.wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .wcard.claimable{border-color:#c8a84b;background:#1a1600}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
 .wcard.craftable{border-color:#2a5535;background:#0d1a10}
 .wcard.partial{border-color:#3a3010;background:#111008}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
+.wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(200,168,75,.7),inset 0 0 14px rgba(200,168,75,.08),0 4px 12px rgba(0,0,0,.35)}
 .wcard.crafting{border-color:#5a3a8a;background:#120d1a}
 .tag-crafting{background:#1e0d35;color:#bb88ff;border:1px solid #6a3ab0}
 .crafting-header{font-size:.78rem;color:#bb88ff;font-weight:500;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
