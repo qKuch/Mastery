@@ -1117,6 +1117,13 @@ function computeMasteryXP(inv) {
         const isPlexus = t === '/Lotus/Types/Game/CrewShip/RailJack/DefaultHarness';
         if(!isPlexus && t.includes('/Game/CrewShip/')) return sum;
         const isNecramech = t.includes('/EntratiMech/');
+        // MOA/Hound weapon components — these paths contain "/Friendly/Pets/"
+        // just like companion bodies do, so without this explicit check they
+        // fall into the generic isWF bucket below (cap 900k). But per the
+        // comment above (verified against a real Mastery Breakdown), these
+        // are Sentinel-Weapons-tier items, capped at 450k like any other
+        // weapon. Must be checked BEFORE isWF or they get mis-capped.
+        const isMoaHoundWeapon = t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
         // MOA/Hound "MoaPetComponents"/"ZanukaPet*Weapon" paths ARE credited —
         // confirmed via WFCD's own SentinelWeapons.json: DE groups these
         // detachable companion weapons in the SAME category as classic Sentinel
@@ -1130,6 +1137,7 @@ function computeMasteryXP(inv) {
                      t.includes('/Vehicles/');
         let cap, cat;
         if(isNecramech){ cap = 1200000; cat='necramechXP'; }
+        else if(isMoaHoundWeapon){ cap = 450000; cat='normalItemXP'; }
         else if(isPlexus){ cap = 900000; cat='plexusXP'; }
         else if(isWF){ cap = 900000; cat='wfXP'; }
         else if(TIER40_WEAPONS.has(t)){ cap = 600000; cat='tier40XP'; }
