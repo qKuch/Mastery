@@ -319,6 +319,8 @@ select.fb:focus{outline:none;border-color:#c8a84b}
         <button class="fs" data-status="craftable">🔨 Craftabile</button>
         <button class="fs" data-status="bp_only">📦 BP deținut</button>
         <div style="width:1px;height:20px;background:#2a2a35;align-self:center;flex-shrink:0"></div>
+        <button class="fb" id="prime-filter-btn">✨ Doar Prime</button>
+        <div style="width:1px;height:20px;background:#2a2a35;align-self:center;flex-shrink:0"></div>
         <select class="fb" id="sortSelect">
           <option value="default">↕ Status → Categorie</option>
           <option value="name">↕ Alfabetic</option>
@@ -492,7 +494,10 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 const KEY=[76,69,79,45,65,76,69,67,9,69,79,45,65,76,69,67];
 const IV=[49,50,70,71,66,51,54,45,76,69,51,45,113,61,57,0];
 
-let missing=[], activeCat='all', activeStatuses=new Set();
+let missing=[], activeCat='all', activeStatuses=new Set(), primeOnly=false;
+// Matches "X Prime", "X Prime Y" etc. as a whole word — avoids false positives
+// like "Primary" (which contains "Prim" but not the word "Prime").
+function isPrimeItem(name){ return /\bPrime\b/.test(name||''); }
 
 function st(msg,cls){const e=document.getElementById('st');e.textContent=msg;e.className='status '+cls}
 
@@ -713,14 +718,14 @@ function buildCard(w){
   else if(cs==='bp_only') craftTag=`<span class="craft-tag tag-bp">📦 BP deținut</span>`;
   else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
   const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0 || (w.isModular && w.modularBpPath);
-  const infoBtn=(cs&&hasComps)?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
+  const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
   d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
   <div class="wcard-footer">
     <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
     ${craftTag}${infoBtn}
     <a class="wiki-btn" href="${wikiUrl}" target="_blank" rel="noopener">Wiki ↗</a>
   </div>`;
-  if(cs&&hasComps){
+  if(hasComps){
     d.querySelector('.info-btn').addEventListener('click',(e)=>{e.stopPropagation();showPopup(w,e.currentTarget);});
   }
   return d;
@@ -776,7 +781,8 @@ function render(){
     const mc=activeCat==='all'||w.category===activeCat;
     const mq=!q||w.name.toLowerCase().includes(q);
     const ms=activeStatuses.size===0||activeStatuses.has(w.craftStatus);
-    return mc&&mq&&ms;
+    const mp=!primeOnly||isPrimeItem(w.name);
+    return mc&&mq&&ms&&mp;
   });
   if(sort==='name'){
     f.sort((a,b)=>a.name.localeCompare(b.name));
@@ -799,7 +805,7 @@ function render(){
 
   // Crafting section
   const craftingItems=missing.filter(w=>{
-    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||w.name.toLowerCase().includes(q));
+    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||w.name.toLowerCase().includes(q))&&(!primeOnly||isPrimeItem(w.name));
   });
   const craftingSection=document.getElementById('crafting-section');
   const craftingGrid=document.getElementById('crafting-grid');
@@ -2317,6 +2323,13 @@ document.addEventListener('click', e=>{
     const s=e.target.dataset.status;
     if(activeStatuses.has(s)){activeStatuses.delete(s);e.target.classList.remove('on');}
     else{activeStatuses.add(s);e.target.classList.add('on');}
+    render();
+  }
+
+  // Prime-only filter (Mastery tab)
+  if(e.target.id==='prime-filter-btn'){
+    primeOnly=!primeOnly;
+    e.target.classList.toggle('on', primeOnly);
     render();
   }
 
