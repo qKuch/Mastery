@@ -66,7 +66,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .wcard.craftable{border-color:#2a5535;background:#0d1a10}
 .wcard.partial{border-color:#3a3010;background:#111008}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
-.prime-spark{color:#f0d080;text-shadow:0 0 6px rgba(240,208,128,.6);margin-right:.3rem;display:inline-block;animation:primeTwinkle 2.4s ease-in-out infinite}
+.prime-spark{color:#f0d080;margin-right:.3rem;display:inline-flex;vertical-align:-1px;filter:drop-shadow(0 0 3px rgba(240,208,128,.7));animation:primeTwinkle 2.4s ease-in-out infinite}
 @keyframes primeTwinkle{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.05)}}
 .wcard.crafting{border-color:#5a3a8a;background:#120d1a}
 .tag-crafting{background:#1e0d35;color:#bb88ff;border:1px solid #6a3ab0}
@@ -754,7 +754,7 @@ function buildCard(w){
   else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
   const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0 || (w.isModular && w.modularBpPath);
   const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-  d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark">✨</span>':''}${w.name}</div>
+  d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark" title="Prime"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" fill="currentColor"/></svg></span>':''}${w.name}</div>
   <div class="wcard-footer">
     <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
     ${craftTag}${infoBtn}
@@ -858,7 +858,7 @@ function render(){
     const timerStr=msLeft>0?(hLeft>0?`${hLeft}h ${mLeft}m`:`${mLeft}m`):'gata curând';
     const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
     const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-    d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark">✨</span>':''}${w.name}</div>
+    d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark" title="Prime"><svg viewBox="0 0 24 24" width="12" height="12"><path d="M12 0 L14.5 9.5 L24 12 L14.5 14.5 L12 24 L9.5 14.5 L0 12 L9.5 9.5 Z" fill="currentColor"/></svg></span>':''}${w.name}</div>
     <div class="wcard-footer">
       <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
       <span class="craft-tag tag-crafting">⚗ ${timerStr}</span>
@@ -2580,7 +2580,12 @@ function updateBreakdownDiff(key, calc){
   const diffEl = document.querySelector(`.bd-diff[data-cat="${key}"]`);
   if(!input || !diffEl) return;
   const raw = input.value.trim();
-  if(raw === ''){ diffEl.textContent = ''; return; }
+  if(raw === ''){
+    diffEl.textContent = '';
+    const realValues = loadBreakdownRealValues();
+    if(key in realValues){ delete realValues[key]; saveBreakdownRealValues(realValues); }
+    return;
+  }
   const real = parseInt(raw.replace(/[^\d-]/g,''), 10);
   if(isNaN(real)){ diffEl.textContent = ''; return; }
   const diff = real - calc;
