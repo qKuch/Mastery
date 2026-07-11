@@ -1104,6 +1104,10 @@ function computeMasteryXP(inv) {
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
         const xp = e.XP || 0;
+        // The Railjack ship/harness itself ("DefaultHarness") isn't a mastery-
+        // granting item — confirmed via the real Mastery Breakdown, which has
+        // no "Railjack" line at all. Its XP is for ship leveling, unrelated.
+        if(t.includes('/Game/CrewShip/')) return sum;
         const isNecramech = t.includes('/EntratiMech/');
         const isPlexus = t.includes('Plexus');
         // MOA/Hound "MoaPetComponents"/"ZanukaPet*Weapon" paths ARE credited —
@@ -1177,6 +1181,7 @@ function computeDetailedBreakdown() {
   (inv.XPInfo||[]).forEach(e=>{
     const t = e.ItemType||'';
     const xp = e.XP||0;
+    if(t.includes('/Game/CrewShip/')) return; // Railjack ship/harness itself, not mastery-granting
     // MOA/Hound weapon components ARE credited — confirmed via WFCD's
     // SentinelWeapons.json grouping them with classic Sentinel weapons
     // (Artax, Deth Machine Rifle, etc.) at the same normal weapon cap.
@@ -2485,7 +2490,14 @@ function renderBreakdownPanel(){
     </div>`;
   panel.style.display = '';
 }
-document.getElementById('breakdown-btn').onclick = renderBreakdownPanel;
+document.getElementById('breakdown-btn').onclick = () => {
+  const panel = document.getElementById('breakdown-panel');
+  if(panel.style.display === 'none' || !panel.innerHTML.trim()){
+    renderBreakdownPanel();
+  } else {
+    panel.style.display = 'none';
+  }
+};
 
 document.getElementById('reload-btn').onclick = async () => {
   const btn = document.getElementById('reload-btn');
