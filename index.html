@@ -6,7 +6,8 @@
 <title>Warframe Mastery Checker</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem}
+:root{--mr-glow:rgba(90,140,255,.05)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(ellipse 900px 600px at 50% -10%,var(--mr-glow),transparent 65%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease}
 h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 .sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
 .card{background:#18181c;border:1px solid #2a2a30;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
@@ -69,6 +70,12 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
 .wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(200,168,75,.7),inset 0 0 14px rgba(200,168,75,.08),0 4px 12px rgba(0,0,0,.35)}
 .wcard.status-improved{animation:statusPulse 2s ease-out 1}
+.empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:#777}
+.empty-state-icon{font-size:2.2rem;margin-bottom:.6rem}
+.empty-state-title{font-size:.95rem;color:#ccc;font-weight:500;margin-bottom:.3rem}
+.empty-state-sub{font-size:.78rem;color:#666}
+.tab-fade-in{animation:tabFadeIn .22s ease}
+@keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 @keyframes statusPulse{
   0%{box-shadow:0 0 0 1px rgba(90,214,132,.9),0 0 22px rgba(90,214,132,.55)}
   70%{box-shadow:0 0 0 1px rgba(90,214,132,.35),0 0 10px rgba(90,214,132,.2)}
@@ -901,6 +908,22 @@ function render(){
 
   const grid=document.getElementById('grid');
   grid.innerHTML='';
+  if(f.length===0){
+    grid.className='grid';
+    const hasActiveFilters = activeCat!=='all' || activeStatuses.size>0 || primeFilter!=='all' || q;
+    grid.innerHTML = hasActiveFilters
+      ? `<div class="empty-state">
+           <div class="empty-state-icon">🔍</div>
+           <div class="empty-state-title">Niciun item nu se potrivește cu filtrele astea</div>
+           <div class="empty-state-sub">Încearcă să resetezi căutarea sau filtrele de categorie/status.</div>
+         </div>`
+      : `<div class="empty-state">
+           <div class="empty-state-icon">🎉</div>
+           <div class="empty-state-title">Nimic aici — probabil ai totul mastered!</div>
+           <div class="empty-state-sub">Nu mai există iteme nemasterate în această listă.</div>
+         </div>`;
+    return;
+  }
   grid.className='grid flat';
   const BATCH=50; let idx=0;
   function flat(){
@@ -1727,6 +1750,7 @@ async function process(file){
     // PlayerLevel in lastData = current Mastery Rank
     const currentMR = inv.PlayerLevel || 0;
     initCalculator(currentMR, totalMasteryXP, notMastered);
+    applyMRBackgroundTheme(currentMR);
 
     const claimCount=notMastered.filter(w=>w.craftStatus==='claimable').length;
     const craftingCount=notMastered.filter(w=>w.craftStatus==='crafting').length;
@@ -2062,6 +2086,17 @@ function xpPerItem(item){
   if(cat === 'Warframes' || cat === 'Companion') return 6000;
   // All weapons (Primary, Secondary, Melee, Arch-Gun, Arch-Melee): 100 XP/level × 30 = 3,000
   return 3000;
+}
+
+// Subtle ambient background glow that shifts with MR progress — cool blue
+// early on, warming toward gold as you approach MR30 (and staying gold for
+// Legendary ranks beyond it). Purely cosmetic, kept very low-opacity so it
+// never competes with card contrast/readability.
+function applyMRBackgroundTheme(mr){
+  const t = Math.max(0, Math.min(1, (mr||0)/30));
+  const hue = 210 - t*168; // 210° (blue) -> 42° (gold)
+  const alpha = 0.05 + t*0.05;
+  document.documentElement.style.setProperty('--mr-glow', `hsla(${hue.toFixed(0)},70%,60%,${alpha.toFixed(3)})`);
 }
 
 function renderMRProgress(currentMR, totalXP, missingItems){
@@ -3394,15 +3429,21 @@ function renderSell() {
 }
 
 // Tab switching
+const TAB_PANEL_IDS = {mastery:'tab-mastery', materials:'tab-materials', calculator:'tab-calculator', sell:'tab-sell'};
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
     t.classList.add('on');
     activeTab=t.dataset.tab;
-    document.getElementById('tab-mastery').style.display=activeTab==='mastery'?'':'none';
-    document.getElementById('tab-materials').style.display=activeTab==='materials'?'':'none';
-    document.getElementById('tab-calculator').style.display=activeTab==='calculator'?'':'none';
-    document.getElementById('tab-sell').style.display=activeTab==='sell'?'':'none';
+    Object.entries(TAB_PANEL_IDS).forEach(([key,id])=>{
+      document.getElementById(id).style.display = activeTab===key ? '' : 'none';
+    });
+    const activeEl = document.getElementById(TAB_PANEL_IDS[activeTab]);
+    if(activeEl){
+      activeEl.classList.remove('tab-fade-in');
+      void activeEl.offsetWidth; // restart animation
+      activeEl.classList.add('tab-fade-in');
+    }
     if(activeTab==='sell') renderSell();
   };
 });
