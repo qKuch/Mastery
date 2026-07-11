@@ -1174,7 +1174,7 @@ function computeDetailedBreakdown() {
     warframes:0, primary:0, secondary:0, melee:0, kitguns:0,
     missions:0, steelPath:0, railjackIntrinsics:0, drifterIntrinsics:0,
     sentinels:0, sentinelWeapons:0, companions:0,
-    archwing:0, archgun:0, archmelee:0, amps:0, necramechs:0,
+    archwing:0, archgun:0, archmelee:0, amps:0, necramechs:0, kdrive:0,
   };
   const MOTE_AMP = '/Lotus/Weapons/Sentients/OperatorAmplifiers/SentTrainingAmplifier/SentAmpTrainingBarrel';
   const SIROCCO = '/Lotus/Weapons/Operator/Pistols/DrifterPistol/DrifterPistolPlayerWeapon';
@@ -1193,6 +1193,7 @@ function computeDetailedBreakdown() {
     if(t.includes('/Powersuits/Archwing/')){ cats.archwing += Math.min(xp,900000)/150; return; }
     if(t.includes('/Powersuits/')){ cats.warframes += Math.min(xp,900000)/150; return; }
     if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')){ cats.companions += Math.min(xp,900000)/150; return; }
+    if(t.includes('/Vehicles/')){ cats.kdrive += Math.min(xp,900000)/150; return; }
     if(t===MOTE_AMP || t===SIROCCO){ cats.amps += Math.min(xp,450000)/150; return; }
     if(g_kitgunChamberSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.kitguns += Math.min(xp,cap)/150; return; }
     if(g_ampPrismSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.amps += Math.min(xp,cap)/150; return; }
@@ -1257,6 +1258,14 @@ function computeDetailedBreakdown() {
     .sort((a,b)=>a.credited-b.credited);
   const compSum = compList.reduce((s,x)=>s+x.credited,0);
   console.log('[MasteryChecker debug] Companions list (' + compList.length + ', sum=' + compSum + '): ' + JSON.stringify(compList));
+
+  // Check unexplored fields that might carry hidden mastery-relevant data.
+  console.log('[MasteryChecker debug] DrifterMelee: ' + JSON.stringify(inv.DrifterMelee));
+  console.log('[MasteryChecker debug] OperatorAmps: ' + JSON.stringify(inv.OperatorAmps));
+  console.log('[MasteryChecker debug] EquippedInstrument: ' + JSON.stringify(inv.EquippedInstrument));
+  console.log('[MasteryChecker debug] Horses: ' + JSON.stringify(inv.Horses));
+  console.log('[MasteryChecker debug] Motorcycles: ' + JSON.stringify(inv.Motorcycles));
+  console.log('[MasteryChecker debug] DuviriInfo keys: ' + JSON.stringify(inv.DuviriInfo ? Object.keys(inv.DuviriInfo) : null));
   (inv.Missions||[]).forEach(m=>{
     const tag = m.Tag||'';
     if(JUNCTION_TAGS.has(tag)){
@@ -2523,7 +2532,7 @@ function renderBreakdownPanel(){
       ${sect(row('Warframes', b.warframes), row('Primary Weapons', b.primary), row('Secondary Weapons', b.secondary), row('Melee Weapons', b.melee), row('Kitguns', b.kitguns))}
       ${sect(row('Missions', b.missions), row('The Steel Path Missions', b.steelPath), row('Railjack Intrinsics', b.railjackIntrinsics), row('Drifter Intrinsics', b.drifterIntrinsics))}
       ${sect(row('Sentinels', b.sentinels), row('Sentinel Weapons', b.sentinelWeapons), row('Companions', b.companions))}
-      ${sect(row('Archwing', b.archwing), row('Archgun', b.archgun), row('Archmelee', b.archmelee), row('Amps', b.amps), row('Necramechs', b.necramechs))}
+      ${sect(row('Archwing', b.archwing), row('Archgun', b.archgun), row('Archmelee', b.archmelee), row('Amps', b.amps), row('Necramechs', b.necramechs), row('K-Drives', b.kdrive))}
       <div style="border-top:1px solid #3a3020;padding-top:.5rem;display:flex;justify-content:space-between;font-weight:700">
         <span style="color:#f0d080">Total</span><span style="color:#fff">${b.total.toLocaleString()}</span>
       </div>
