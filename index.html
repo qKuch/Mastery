@@ -65,6 +65,9 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
 .wcard.craftable{border-color:#2a5535;background:#0d1a10}
 .wcard.partial{border-color:#3a3010;background:#111008}
+.wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
+.prime-spark{color:#f0d080;text-shadow:0 0 6px rgba(240,208,128,.6);margin-right:.3rem;display:inline-block;animation:primeTwinkle 2.4s ease-in-out infinite}
+@keyframes primeTwinkle{0%,100%{opacity:.55;transform:scale(.9)}50%{opacity:1;transform:scale(1.05)}}
 .wcard.crafting{border-color:#5a3a8a;background:#120d1a}
 .tag-crafting{background:#1e0d35;color:#bb88ff;border:1px solid #6a3ab0}
 .crafting-header{font-size:.78rem;color:#bb88ff;font-weight:500;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
@@ -739,7 +742,8 @@ function showPopup(w, anchorEl){
 function buildCard(w){
   const d=document.createElement('div');
   const cs=w.craftStatus;
-  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'');
+  const isPrime=isPrimeItem(w.name);
+  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'')+(isPrime?' prime-item':'');
   const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
   const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
   let craftTag='';
@@ -750,7 +754,7 @@ function buildCard(w){
   else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
   const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0 || (w.isModular && w.modularBpPath);
   const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-  d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
+  d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark">✨</span>':''}${w.name}</div>
   <div class="wcard-footer">
     <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
     ${craftTag}${infoBtn}
@@ -844,7 +848,8 @@ function render(){
   craftingSection.style.display=craftingItems.length?'':'none';
   craftingItems.forEach(w=>{
     const d=document.createElement('div');
-    d.className='wcard crafting';
+    const isPrime=isPrimeItem(w.name);
+    d.className='wcard crafting'+(isPrime?' prime-item':'');
     const wikiSlug=w.name.replace(/ /g,'_');
     const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
     const msLeft=w.craftingTs?Math.max(0,w.craftingTs-Date.now()):0;
@@ -853,7 +858,7 @@ function render(){
     const timerStr=msLeft>0?(hLeft>0?`${hLeft}h ${mLeft}m`:`${mLeft}m`):'gata curând';
     const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
     const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-    d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
+    d.innerHTML=`<div class="wname" title="${w.name}">${isPrime?'<span class="prime-spark">✨</span>':''}${w.name}</div>
     <div class="wcard-footer">
       <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
       <span class="craft-tag tag-crafting">⚗ ${timerStr}</span>
