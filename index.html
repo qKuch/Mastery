@@ -1228,6 +1228,35 @@ function computeDetailedBreakdown() {
     .sort((a,b)=>a.credited-b.credited);
   const wfSum = wfList.reduce((s,x)=>s+x.credited,0);
   console.log('[MasteryChecker debug] Warframes list (' + wfList.length + ', sum=' + wfSum + '): ' + JSON.stringify(wfList));
+
+  // Precise audit: Primary Weapons — exact list + sum, sorted by credit, to
+  // spot any anomaly (non-3000/4000 credit = partial or misclassified item).
+  const primaryList = (inv.XPInfo||[]).filter(e=>{
+    const t = e.ItemType||'';
+    if(t.includes('/Game/CrewShip/') || t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return false;
+    if(t.includes('/EntratiMech/') || t.includes('Plexus') || t.includes('/Sentinels/') || t.includes('/Powersuits/')) return false;
+    if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')) return false;
+    if(g_kitgunChamberSet.has(t) || g_ampPrismSet.has(t)) return false;
+    const catalogItem = g_itemByUniqueName.get(t);
+    const gcat = catalogItem ? catalogItem.category : null;
+    return gcat==='Primary' || (!gcat && !t.includes('/Vehicles/'));
+  }).map(e=>{
+    const t=e.ItemType||''; const cap=TIER40_WEAPONS.has(t)?600000:450000;
+    return {t, xp:e.XP, credited: Math.round(Math.min(e.XP||0,cap)/150)};
+  }).sort((a,b)=>a.credited-b.credited);
+  const primarySum = primaryList.reduce((s,x)=>s+x.credited,0);
+  console.log('[MasteryChecker debug] Primary list (' + primaryList.length + ', sum=' + primarySum + '): ' + JSON.stringify(primaryList));
+
+  // Precise audit: Companions — exact list + sum.
+  const compList = (inv.XPInfo||[]).filter(e=>{
+    const t = e.ItemType||'';
+    if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return false;
+    if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')) return true;
+    return t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/');
+  }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,900000)/150)}))
+    .sort((a,b)=>a.credited-b.credited);
+  const compSum = compList.reduce((s,x)=>s+x.credited,0);
+  console.log('[MasteryChecker debug] Companions list (' + compList.length + ', sum=' + compSum + '): ' + JSON.stringify(compList));
   (inv.Missions||[]).forEach(m=>{
     const tag = m.Tag||'';
     if(JUNCTION_TAGS.has(tag)){
