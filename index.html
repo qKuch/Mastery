@@ -1216,6 +1216,18 @@ function computeDetailedBreakdown() {
     console.log('[MasteryChecker debug] breakdown fallback-to-Primary hits: ' + JSON.stringify(window.__fallbackHits));
     window.__fallbackHits = [];
   }
+  // Precise audit: list every entry counted as "Warframes" with exact credit,
+  // so a real Math check against 488,400 is possible instead of guessing.
+  const wfList = (inv.XPInfo||[]).filter(e=>{
+    const t = e.ItemType||'';
+    if(!t.includes('/Powersuits/')) return false;
+    if(t.includes('/Powersuits/Archwing/')) return false;
+    if(/\/Kavat\//.test(t)) return false;
+    return true;
+  }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,900000)/150)}))
+    .sort((a,b)=>a.credited-b.credited);
+  const wfSum = wfList.reduce((s,x)=>s+x.credited,0);
+  console.log('[MasteryChecker debug] Warframes list (' + wfList.length + ', sum=' + wfSum + '): ' + JSON.stringify(wfList));
   (inv.Missions||[]).forEach(m=>{
     const tag = m.Tag||'';
     if(JUNCTION_TAGS.has(tag)){
