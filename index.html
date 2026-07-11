@@ -292,6 +292,10 @@ select.fb:focus{outline:none;border-color:#c8a84b}
       <div id="mastery-panel-items">
         <div class="stats" id="stats"></div>
         <div id="mr-progress-wrap" style="display:none;margin-top:.75rem"></div>
+        <div style="margin-top:.5rem">
+          <button class="fb" id="breakdown-btn" style="font-size:.72rem;display:none">📊 Vezi Mastery Breakdown (comparabil cu jocul)</button>
+        </div>
+        <div id="breakdown-panel" style="display:none;margin-top:.5rem"></div>
         <div class="toolbar">
         <input type="text" id="search" placeholder="Caută...">
         <button class="fb on" data-cat="all">Toate</button>
@@ -1155,6 +1159,65 @@ function computeMasteryXP(inv) {
       return _xpDebug;
 }
 
+// Detailed breakdown matching the in-game "Mastery Breakdown" screen's exact
+// categories, for direct side-by-side comparison. Reuses the same core rules
+// as computeMasteryXP (validated against real data), just split by category
+// instead of collapsed into a few internal buckets.
+function computeDetailedBreakdown() {
+  if(!g_inv || !g_itemByUniqueName) return null;
+  const inv = g_inv;
+  const cats = {
+    warframes:0, primary:0, secondary:0, melee:0, kitguns:0,
+    missions:0, steelPath:0, railjackIntrinsics:0, drifterIntrinsics:0,
+    sentinels:0, sentinelWeapons:0, companions:0,
+    archwing:0, archgun:0, archmelee:0, amps:0, necramechs:0,
+  };
+  (inv.XPInfo||[]).forEach(e=>{
+    const t = e.ItemType||'';
+    const xp = e.XP||0;
+    if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return; // no mastery, confirmed
+    if(t.includes('/EntratiMech/')){ cats.necramechs += Math.min(xp,1200000)/150; return; }
+    if(t.includes('/Sentinels/SentinelWeapons/')){ cats.sentinelWeapons += Math.min(xp,450000)/150; return; }
+    if(t.includes('/Sentinels/SentinelPowersuits/')){ cats.sentinels += Math.min(xp,900000)/150; return; }
+    if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')){ cats.companions += Math.min(xp,900000)/150; return; } // Khora's Venari
+    if(t.includes('/Powersuits/Archwing/')){ cats.archwing += Math.min(xp,900000)/150; return; }
+    if(t.includes('/Powersuits/')){ cats.warframes += Math.min(xp,900000)/150; return; }
+    if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')){ cats.companions += Math.min(xp,900000)/150; return; }
+    if(g_kitgunChamberSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.kitguns += Math.min(xp,cap)/150; return; }
+    if(g_ampPrismSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.amps += Math.min(xp,cap)/150; return; }
+    const cap = TIER40_WEAPONS.has(t) ? 600000 : 450000;
+    const val = Math.min(xp,cap)/150;
+    const catalogItem = g_itemByUniqueName.get(t);
+    const gcat = catalogItem ? catalogItem.category : null;
+    if(gcat==='Primary') cats.primary += val;
+    else if(gcat==='Secondary') cats.secondary += val;
+    else if(gcat==='Melee') cats.melee += val;
+    else if(gcat==='Arch-Gun') cats.archgun += val;
+    else if(gcat==='Arch-Melee') cats.archmelee += val;
+    else cats.primary += val; // fallback: uncatalogued weapon-type item (rare)
+  });
+  (inv.Missions||[]).forEach(m=>{
+    const tag = m.Tag||'';
+    if(JUNCTION_TAGS.has(tag)){
+      if(m.Tier) cats.steelPath += 1000; // base junction credit added below via ClaimedJunctionChallengeRewards
+      return;
+    }
+    const val = NODE_MASTERY_XP[tag] || 0;
+    cats.missions += val;
+    if(m.Tier) cats.steelPath += val;
+  });
+  const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j=>(j||'').slice(0,2)));
+  cats.missions += junctionCodes.size * 1000;
+
+  const ps = inv.PlayerSkills || {};
+  cats.railjackIntrinsics = ((ps.LPS_TACTICAL||0)+(ps.LPS_PILOTING||0)+(ps.LPS_GUNNERY||0)+(ps.LPS_ENGINEERING||0)+(ps.LPS_COMMAND||0)) * 1500;
+  cats.drifterIntrinsics = ((ps.LPS_DRIFT_RIDING||0)+(ps.LPS_DRIFT_OPPORTUNITY||0)+(ps.LPS_DRIFT_COMBAT||0)+(ps.LPS_DRIFT_ENDURANCE||0)) * 1500;
+
+  Object.keys(cats).forEach(k=>{ cats[k] = Math.round(cats[k]); });
+  cats.total = Object.values(cats).reduce((a,b)=>a+b, 0);
+  return cats;
+}
+
 async function process(file){
   await _subRecipesReady;
   if(!file)return;
@@ -1350,6 +1413,8 @@ async function process(file){
     // parts), so we detect them directly from the save data's ModularParts field
     // instead of the __allItems list used for every other category above.
     const itemByUniqueName = new Map(__allItems.map(w=>[w.uniqueName, w]));
+    g_inv = inv;
+    g_itemByUniqueName = itemByUniqueName;
     const humanizePart = u => {
       if(!u) return '';
       const seg = u.split('/').pop();
@@ -1416,6 +1481,8 @@ async function process(file){
       {name:'Lega', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartB', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartBBlueprint',itemCount:1},{name:'Charamote Sagan Module',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/OrokinFishSaganModuleItem',itemCount:6},{name:'Gyromag Systems',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem',itemCount:3},{name:'Radiant Zodian',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisEidolonGemACutItem',itemCount:3},{name:'Vega Toroid',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/ArachnoidMicroidItem',itemCount:3}]},
       {name:'Klamora', uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartC', realComponents:[{name:'Blueprint',uniqueName:'/Lotus/Weapons/Corpus/OperatorAmplifiers/Set1/Barrel/CorpAmpSet1BarrelPartCBlueprint',itemCount:1},{name:'Gyromag Systems',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/CorpusWidgetAItem',itemCount:3},{name:'Radiant Zodian',uniqueName:'/Lotus/Types/Items/Gems/Solaris/SolarisEidolonGemACutItem',itemCount:3},{name:'Tromyzon Entroplasma',uniqueName:'/Lotus/Types/Items/Fish/Solaris/FishParts/OrokinFishEntroplasmaItem',itemCount:6},{name:'Vega Toroid',uniqueName:'/Lotus/Types/Gameplay/Venus/Resources/ArachnoidMicroidItem',itemCount:3}]},
     ];
+    g_kitgunChamberSet = new Set(KITGUN_CHAMBERS.map(p=>p.uniqueName));
+    g_ampPrismSet = new Set(AMP_PRISMS.map(p=>p.uniqueName));
 
     const KDRIVE_BOARDS=[
       {name:'Feverspine', uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardInfestedB/HoverboardInfestedBDeck', realComponents:[{name:'Adramal Alloy',uniqueName:'/Lotus/Types/Items/Gems/Deimos/DeimosCommonOreAAlloyItem',itemCount:40},{name:'Benign Infested Tumor',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosGenericSharedFishPartItem',itemCount:50},{name:'Blueprint',uniqueName:'/Lotus/Types/Vehicles/Hoverboard/HoverboardParts/PartComponents/HoverboardInfestedB/HoverboardInfestedBDeckBlueprint',itemCount:1},{name:'Ganglion',uniqueName:'/Lotus/Types/Gameplay/InfestedMicroplanet/Resources/InfMapricoFruitItem',itemCount:25},{name:'Parasitic Tethermaw',uniqueName:'/Lotus/Types/Items/Fish/Deimos/FishParts/DeimosInfestedFishGPartItem',itemCount:15}]},
@@ -1928,6 +1995,10 @@ function renderMaterials(){
 
 // ── Calculator MR ──────────────────────────────────────────
 let calcData = null;
+let g_inv = null;
+let g_itemByUniqueName = null;
+let g_kitgunChamberSet = null;
+let g_ampPrismSet = null;
 
 // MR rank label: MR1-30, then LR1-LR6 (max LR6 for non-founders)
 function mrName(rank){
@@ -1954,6 +2025,8 @@ function renderMRProgress(currentMR, totalXP, missingItems){
   const wrap = document.getElementById('mr-progress-wrap');
   if(!wrap) return;
   wrap.style.display = '';
+  const breakdownBtn = document.getElementById('breakdown-btn');
+  if(breakdownBtn) breakdownBtn.style.display = '';
 
   // XP from all remaining items
   const potentialXP = missingItems.reduce((s, w) => s + xpPerItem(w), 0);
@@ -2458,6 +2531,28 @@ drop.ondrop=async e=>{
   const f=e.dataTransfer.files[0];
   if(f) loadFile(f, null);
 };
+
+function renderBreakdownPanel(){
+  const panel = document.getElementById('breakdown-panel');
+  const b = computeDetailedBreakdown();
+  if(!b){ panel.innerHTML = '<div style="color:#e05555;font-size:.75rem">Încarcă întâi un fișier .dat.</div>'; panel.style.display=''; return; }
+  const row = (label, val) => `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#c8a84b">${label}</span><span style="color:#e8e8e8;font-weight:600">${val.toLocaleString()}</span></div>`;
+  const sect = (...rows) => `<div style="margin-bottom:.7rem">${rows.join('')}</div>`;
+  panel.innerHTML = `
+    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid #3a3020;border-radius:8px;padding:1rem;max-width:420px;font-size:.8rem">
+      <div style="color:#f0d080;font-weight:700;font-size:.9rem;margin-bottom:.8rem;letter-spacing:.05em">MASTERY BREAKDOWN (calculat)</div>
+      ${sect(row('Warframes', b.warframes), row('Primary Weapons', b.primary), row('Secondary Weapons', b.secondary), row('Melee Weapons', b.melee), row('Kitguns', b.kitguns))}
+      ${sect(row('Missions', b.missions), row('The Steel Path Missions', b.steelPath), row('Railjack Intrinsics', b.railjackIntrinsics), row('Drifter Intrinsics', b.drifterIntrinsics))}
+      ${sect(row('Sentinels', b.sentinels), row('Sentinel Weapons', b.sentinelWeapons), row('Companions', b.companions))}
+      ${sect(row('Archwing', b.archwing), row('Archgun', b.archgun), row('Archmelee', b.archmelee), row('Amps', b.amps), row('Necramechs', b.necramechs))}
+      <div style="border-top:1px solid #3a3020;padding-top:.5rem;display:flex;justify-content:space-between;font-weight:700">
+        <span style="color:#f0d080">Total</span><span style="color:#fff">${b.total.toLocaleString()}</span>
+      </div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Compară rând cu rând cu ecranul din joc (Profile → hover pe bara de mastery) ca să vezi exact unde apare vreo diferență.</div>
+    </div>`;
+  panel.style.display = '';
+}
+document.getElementById('breakdown-btn').onclick = renderBreakdownPanel;
 
 document.getElementById('reload-btn').onclick = async () => {
   const btn = document.getElementById('reload-btn');
