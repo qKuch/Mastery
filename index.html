@@ -30,7 +30,7 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
 #prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
 .pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
-.bd-bar-wrap{height:4px;border-radius:2px;background:#1c1c22;margin:0 0 .35rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
+.bd-bar-wrap{height:4px;border-radius:2px;background:#1c1c22;margin:0 0 .1rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
 .bd-bar-wrap.show{opacity:1}
 .bd-bar-fill{height:100%;width:0%;border-radius:2px;transition:width .5s cubic-bezier(.22,1,.36,1),background .3s ease}
 .intro-el{opacity:0;transform:translateY(16px);animation:pageEnter .6s cubic-bezier(.22,1,.36,1) forwards}
@@ -1244,6 +1244,47 @@ function computeDetailedBreakdown(invOverride) {
   Object.keys(cats).forEach(k=>{ cats[k] = Math.round(cats[k]); });
   cats.total = Object.values(cats).reduce((a,b)=>a+b, 0);
   return { cats, catItems };
+}
+
+// Warframe-catalog names that appear under the "Warframes" category but
+// aren't actually player-masterable frames (Operator/Drifter/Kahl etc. —
+// same exclusion list used when building the not-yet-mastered checklist).
+const EXCLUDED_WARFRAMES = new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel']);
+
+// Theoretical max MR XP per category, computed from the embedded item
+// catalog — i.e. "if every item that exists in this category were fully
+// ranked, how much would this category be worth". Only covers categories
+// backed by a complete, fixed catalog list (weapons, warframes, archwing,
+// sentinels, base companions + Plexus). Categories built from player-chosen
+// modular parts (Kitguns, Zaws, Amps) or variable-count sources (missions,
+// intrinsics, Necramechs' optional forma, MOA/Hound/Venari) aren't included
+// here — there's no single fixed "total" for those, so showing one would be
+// more misleading than showing nothing.
+function computeCategoryMaxPossible(){
+  if(!g_itemByUniqueName) return null;
+  const max = { warframes:0, primary:0, secondary:0, melee:0, archgun:0, archmelee:0, archwing:0, sentinels:0, companions:0 };
+  const weaponCap = t => TIER40_WEAPONS.has(t) ? 4000 : 3000;
+  for(const w of g_itemByUniqueName.values()){
+    const t = w.uniqueName;
+    switch(w.category){
+      case 'Warframes':
+        if(t.includes('/Lotus/Powersuits/') && !EXCLUDED_WARFRAMES.has(w.name)) max.warframes += 6000;
+        break;
+      case 'Archwing': max.archwing += 6000; break;
+      case 'Sentinels': max.sentinels += 6000; break;
+      case 'Pets': if(t.includes('PowerSuit')) max.companions += 6000; break;
+      case 'Primary': max.primary += weaponCap(t); break;
+      case 'Secondary': max.secondary += weaponCap(t); break;
+      case 'Melee': max.melee += weaponCap(t); break;
+      case 'Arch-Gun': max.archgun += weaponCap(t); break;
+      case 'Arch-Melee': max.archmelee += weaponCap(t); break;
+    }
+  }
+  // Plexus is a single fixed item (see computeDetailedBreakdown's
+  // DefaultHarness handling) — always worth 6000 once maxed, and the real
+  // in-game breakdown folds it into Companions.
+  max.companions += 6000;
+  return max;
 }
 
 async function process(file){
@@ -2530,53 +2571,46 @@ function shortItemName(t){
 function updateBreakdownDiff(key, calc){
   const input = document.querySelector(`.bd-real[data-cat="${key}"]`);
   const diffEl = document.querySelector(`.bd-diff[data-cat="${key}"]`);
-  const barWrap = document.querySelector(`.bd-bar-wrap[data-cat="${key}"]`);
-  const barFill = document.querySelector(`.bd-bar-fill[data-cat="${key}"]`);
   if(!input || !diffEl) return;
   const raw = input.value.trim();
-  if(raw === ''){
-    diffEl.textContent = '';
-    if(barWrap) barWrap.classList.remove('show');
-    if(barFill) barFill.style.width = '0%';
-    return;
-  }
+  if(raw === ''){ diffEl.textContent = ''; return; }
   const real = parseInt(raw.replace(/[^\d-]/g,''), 10);
-  if(isNaN(real)){
-    diffEl.textContent = '';
-    if(barWrap) barWrap.classList.remove('show');
-    return;
-  }
+  if(isNaN(real)){ diffEl.textContent = ''; return; }
   const diff = real - calc;
   diffEl.textContent = (diff===0 ? '✓' : (diff>0?'+':'') + diff.toLocaleString());
   diffEl.style.color = diff===0 ? '#7aeaaa' : '#e05555';
-  // Progress bar: how close calculated is to the real value. 100% = exact
-  // match (green). Under- or over-counting both show as amber/red, since
-  // either direction means something's still wrong.
-  if(barWrap && barFill){
-    if(real <= 0){
-      barWrap.classList.remove('show');
-    } else {
-      barWrap.classList.add('show');
-      const pct = Math.max(0, Math.min(100, (calc/real)*100));
-      barFill.style.width = pct + '%';
-      barFill.style.background = diff===0 ? '#5ad684' : (Math.abs(diff)/real < 0.02 ? '#e0b355' : '#e05555');
-    }
-  }
   const realValues = loadBreakdownRealValues();
   realValues[key] = raw;
   saveBreakdownRealValues(realValues);
+}
+// Progress bar: how much of this category's total achievable MR XP has
+// already been earned (calc / theoretical max for that category). Always
+// visible when a max is known — doesn't depend on the "real" input at all.
+function updateBreakdownBar(key, calc, maxPossible){
+  const barWrap = document.querySelector(`.bd-bar-wrap[data-cat="${key}"]`);
+  const barFill = document.querySelector(`.bd-bar-fill[data-cat="${key}"]`);
+  if(!barWrap || !barFill) return;
+  if(!maxPossible || maxPossible <= 0){ barWrap.classList.remove('show'); return; }
+  barWrap.classList.add('show');
+  const pct = Math.max(0, Math.min(100, (calc/maxPossible)*100));
+  barFill.style.width = pct + '%';
+  // Gold gradient toward full completion, brightening as it approaches 100%.
+  barFill.style.background = pct>=100 ? '#5ad684' : (pct>=60 ? '#e0b355' : '#c8a84b');
 }
 function renderBreakdownPanel(){
   const panel = document.getElementById('breakdown-panel');
   const result = computeDetailedBreakdown();
   if(!result){ panel.innerHTML = '<div style="color:#e05555;font-size:.75rem">Încarcă întâi un fișier .dat.</div>'; panel.style.display=''; return; }
   const { cats, catItems } = result;
+  const maxPossible = computeCategoryMaxPossible() || {};
   const realValues = loadBreakdownRealValues();
 
   const rowsHtml = BREAKDOWN_CATEGORIES.map(({key,label,divider})=>{
     const calc = cats[key]||0;
     const items = catItems[key]||[];
     const savedReal = realValues[key]||'';
+    const max = maxPossible[key];
+    const pctLabel = max ? `<div style="font-size:.62rem;color:#777;margin:0 0 .3rem 1.4rem">${Math.min(100,Math.round((calc/max)*100))}% din maximul posibil (${max.toLocaleString()})</div>` : '';
     return `${divider?'<div style="height:.5rem"></div>':''}
       <div style="display:flex;align-items:center;gap:.4rem;padding:2px 0">
         <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:#888;cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
@@ -2586,6 +2620,7 @@ function renderBreakdownPanel(){
         <span class="bd-diff" data-cat="${key}" style="width:3.5rem;text-align:right;font-size:.7rem;font-weight:700"></span>
       </div>
       <div class="bd-bar-wrap" data-cat="${key}"><div class="bd-bar-fill" data-cat="${key}"></div></div>
+      ${pctLabel}
       <div class="bd-items" data-cat="${key}" style="display:none;margin:.2rem 0 .3rem 1.4rem;padding:.3rem .5rem;background:#0d0d11;border-radius:4px;max-height:180px;overflow-y:auto;font-size:.65rem;color:#999"></div>`;
   }).join('');
 
@@ -2599,13 +2634,14 @@ function renderBreakdownPanel(){
       <div style="border-top:1px solid #3a3020;padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
         <span style="color:#f0d080">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
       </div>
-      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Completează coloana "real" din poza ta din joc — diferența apare automat. Click pe ▸ arată lista exactă de iteme pentru acea categorie.</div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Bara arată progresul spre maximul posibil pentru categoriile cu total fix (arme, warframe-uri, companioni etc). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
     </div>`;
   panel.style.display = '';
 
   BREAKDOWN_CATEGORIES.forEach(({key})=>{
     const calc = cats[key]||0;
     updateBreakdownDiff(key, calc);
+    updateBreakdownBar(key, calc, maxPossible[key]);
     const input = panel.querySelector(`.bd-real[data-cat="${key}"]`);
     if(input) input.addEventListener('input', ()=>updateBreakdownDiff(key, calc));
     const btn = panel.querySelector(`.bd-expand[data-cat="${key}"]`);
