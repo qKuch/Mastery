@@ -30,6 +30,8 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
 #prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
 .pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
+.intro-el{opacity:0;transform:translateY(16px);animation:pageEnter .6s cubic-bezier(.22,1,.36,1) forwards}
+@keyframes pageEnter{to{opacity:1;transform:translateY(0)}}
 @keyframes pfPop{
   0%{transform:scale(1) rotate(0deg)}
   30%{transform:scale(1.18) rotate(-6deg)}
@@ -253,10 +255,10 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 </style>
 </head>
 <body>
-<h1>⚙ Warframe Mastery Checker</h1>
-<p class="sub">Arme și warframe-uri care nu au contribuit niciodată la mastery rank</p>
+<h1 class="intro-el" style="animation-delay:.02s">⚙ Warframe Mastery Checker</h1>
+<p class="sub intro-el" style="animation-delay:.09s">Arme și warframe-uri care nu au contribuit niciodată la mastery rank</p>
 
-<div class="card" style="border-color:#2a3a20;background:#111610">
+<div class="card intro-el" style="animation-delay:.16s;border-color:#2a3a20;background:#111610">
   <div style="font-size:.8rem;color:#8acd5a;font-weight:500;margin-bottom:.6rem">📋 Cum obții fișierul lastData.dat</div>
   <ol style="font-size:.8rem;color:#aaa;padding-left:1.2rem;line-height:1.9">
     <li>Instalează <strong style="color:#e0e0e0">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:#c8a84b">alecaframe.com</a></li>
@@ -266,7 +268,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
   </ol>
 </div>
 
-<div class="card">
+<div class="card intro-el" style="animation-delay:.23s">
   <div class="drop" id="drop">
     <div class="drop-icon">📂</div>
     <p class="drop-label">Trage <strong>lastData.dat</strong> aici sau <strong id="browse">alege fișierul</strong></p>
