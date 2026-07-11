@@ -1266,6 +1266,13 @@ function computeDetailedBreakdown() {
   console.log('[MasteryChecker debug] Horses: ' + JSON.stringify(inv.Horses));
   console.log('[MasteryChecker debug] Motorcycles: ' + JSON.stringify(inv.Motorcycles));
   console.log('[MasteryChecker debug] DuviriInfo keys: ' + JSON.stringify(inv.DuviriInfo ? Object.keys(inv.DuviriInfo) : null));
+
+  // Check if Horse/Motorcycle (Duviri vehicles) have XPInfo entries — if so,
+  // and the real breakdown has no "Horses"/"Motorcycles" line, they're likely
+  // being over-credited just like the Railjack harness was.
+  const duviriVehicleXP = (inv.XPInfo||[]).filter(e=>/ErsatzHorse|Motorcycle/i.test(e.ItemType||''))
+    .map(e=>({t:e.ItemType, xp:e.XP}));
+  console.log('[MasteryChecker debug] Duviri vehicle XPInfo entries: ' + JSON.stringify(duviriVehicleXP));
   (inv.Missions||[]).forEach(m=>{
     const tag = m.Tag||'';
     if(JUNCTION_TAGS.has(tag)){
