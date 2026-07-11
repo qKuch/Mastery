@@ -1246,45 +1246,47 @@ function computeDetailedBreakdown(invOverride) {
   return { cats, catItems };
 }
 
-// Warframe-catalog names that appear under the "Warframes" category but
-// aren't actually player-masterable frames (Operator/Drifter/Kahl etc. —
-// same exclusion list used when building the not-yet-mastered checklist).
-const EXCLUDED_WARFRAMES = new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel']);
-
-// Theoretical max MR XP per category, computed from the embedded item
-// catalog — i.e. "if every item that exists in this category were fully
-// ranked, how much would this category be worth". Only covers categories
-// backed by a complete, fixed catalog list (weapons, warframes, archwing,
-// sentinels, base companions + Plexus). Categories built from player-chosen
-// modular parts (Kitguns, Zaws, Amps) or variable-count sources (missions,
-// intrinsics, Necramechs' optional forma, MOA/Hound/Venari) aren't included
-// here — there's no single fixed "total" for those, so showing one would be
-// more misleading than showing nothing.
+// Theoretical max MR XP per category — sourced directly from the WARFRAME
+// Wiki's Mastery Rank page (Update 42.0, 2026-03-25), which maintains an
+// actively-updated, curated count of every mastery-granting item in the
+// game. These 18 values sum to exactly 3,201,138, matching the wiki's
+// published "Total" row — confirming every category here is mapped
+// correctly to this tool's breakdown categories (which mirror the real
+// in-game Mastery Breakdown screen).
+//
+// Using fixed wiki numbers instead of counting our own embedded item
+// catalog because: (1) the wiki is actively maintained by the community
+// against every new release, so it's more current than a catalog snapshot
+// baked into this file at build time; (2) categories like Sentinel Weapons,
+// Amps, K-Drives, Necramechs, Companions (incl. MOA/Hound/Plexus), and
+// Missions/Steel Path/Intrinsics have no reliable "complete list" available
+// in our own data to count from — the wiki already did that work.
+//
+// NOTE: these numbers will drift slightly as new items release. Update by
+// checking https://wiki.warframe.com/w/Mastery_Rank#Total_Mastery
+// periodically (or whenever a Mastery Breakdown comparison stops adding up).
+const CATEGORY_MAX_POSSIBLE = {
+  warframes: 702000,        // 117 frames
+  primary: 606000,          // 194 primaries
+  secondary: 455000,        // 147 secondaries (Kitguns counted separately below)
+  melee: 717000,            // 235 melees, including Zaws (no separate Zaw row in this tool)
+  kitguns: 18000,           // 6 kitgun chambers
+  missions: 27569,          // 241 nodes + 13 junctions
+  steelPath: 27569,         // same nodes/junctions, cleared again in Steel Path
+  railjackIntrinsics: 75000,  // 50 total ranks (5 skills x rank 10)
+  drifterIntrinsics: 60000,   // 40 total ranks (4 skills x rank 10)
+  sentinels: 102000,        // 17 sentinel bodies
+  sentinelWeapons: 72000,   // 21 robotic weapons + 3 Hound weapons
+  companions: 150000,       // 6 Kubrows + 5 Kavats + 3 Predasites + 3 Vulpaphylas + 4 MOAs + 3 Hounds + Plexus
+  archwing: 30000,          // 5 archwings
+  archgun: 62000,           // 20 archguns
+  archmelee: 24000,         // 8 archmelees
+  amps: 27000,              // 9 amp prisms
+  necramechs: 16000,        // 2 necramechs, each up to 8000 with 5 forma
+  kdrive: 30000,            // 5 k-drive boards
+};
 function computeCategoryMaxPossible(){
-  if(!g_itemByUniqueName) return null;
-  const max = { warframes:0, primary:0, secondary:0, melee:0, archgun:0, archmelee:0, archwing:0, sentinels:0, companions:0 };
-  const weaponCap = t => TIER40_WEAPONS.has(t) ? 4000 : 3000;
-  for(const w of g_itemByUniqueName.values()){
-    const t = w.uniqueName;
-    switch(w.category){
-      case 'Warframes':
-        if(t.includes('/Lotus/Powersuits/') && !EXCLUDED_WARFRAMES.has(w.name)) max.warframes += 6000;
-        break;
-      case 'Archwing': max.archwing += 6000; break;
-      case 'Sentinels': max.sentinels += 6000; break;
-      case 'Pets': if(t.includes('PowerSuit')) max.companions += 6000; break;
-      case 'Primary': max.primary += weaponCap(t); break;
-      case 'Secondary': max.secondary += weaponCap(t); break;
-      case 'Melee': max.melee += weaponCap(t); break;
-      case 'Arch-Gun': max.archgun += weaponCap(t); break;
-      case 'Arch-Melee': max.archmelee += weaponCap(t); break;
-    }
-  }
-  // Plexus is a single fixed item (see computeDetailedBreakdown's
-  // DefaultHarness handling) — always worth 6000 once maxed, and the real
-  // in-game breakdown folds it into Companions.
-  max.companions += 6000;
-  return max;
+  return CATEGORY_MAX_POSSIBLE;
 }
 
 async function process(file){
@@ -2634,7 +2636,7 @@ function renderBreakdownPanel(){
       <div style="border-top:1px solid #3a3020;padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
         <span style="color:#f0d080">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
       </div>
-      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Bara arată progresul spre maximul posibil pentru categoriile cu total fix (arme, warframe-uri, companioni etc). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Bara arată progresul spre maximul posibil pentru fiecare categorie (sursă: WARFRAME Wiki). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
     </div>`;
   panel.style.display = '';
 
