@@ -68,6 +68,12 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .wcard.partial{border-color:#3a3010;background:#111008}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
 .wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(200,168,75,.7),inset 0 0 14px rgba(200,168,75,.08),0 4px 12px rgba(0,0,0,.35)}
+.wcard.status-improved{animation:statusPulse 2s ease-out 1}
+@keyframes statusPulse{
+  0%{box-shadow:0 0 0 1px rgba(90,214,132,.9),0 0 22px rgba(90,214,132,.55)}
+  70%{box-shadow:0 0 0 1px rgba(90,214,132,.35),0 0 10px rgba(90,214,132,.2)}
+  100%{box-shadow:0 0 0 0 rgba(90,214,132,0),0 0 0 rgba(90,214,132,0)}
+}
 .wcard.crafting{border-color:#5a3a8a;background:#120d1a}
 .tag-crafting{background:#1e0d35;color:#bb88ff;border:1px solid #6a3ab0}
 .crafting-header{font-size:.78rem;color:#bb88ff;font-weight:500;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
@@ -521,6 +527,18 @@ const KEY=[76,69,79,45,65,76,69,67,9,69,79,45,65,76,69,67];
 const IV=[49,50,70,71,66,51,54,45,76,69,51,45,113,61,57,0];
 
 let missing=[], activeCat='all', activeStatuses=new Set(), primeFilter='all'; // 'all' | 'normal' | 'prime'
+// Tracks which items' craftStatus improved since the last time a .dat was
+// loaded (e.g. "De construit" → "Craftabil"), so their cards get a one-shot
+// highlight pulse on this render. Persisted across page reloads via
+// localStorage so re-uploading the same file later still shows what's new.
+let improvedItemNames = new Set();
+const STATUS_RANK = {claimable:0, owned:1, craftable:2, bp_only:3, not_built:4};
+function loadItemStatusSnapshot(){
+  try { return JSON.parse(localStorage.getItem('wf_item_status_snapshot')||'{}'); } catch(e){ return {}; }
+}
+function saveItemStatusSnapshot(v){
+  try { localStorage.setItem('wf_item_status_snapshot', JSON.stringify(v)); } catch(e){}
+}
 // Matches "X Prime", "X Prime Y" etc. as a whole word — avoids false positives
 // like "Primary" (which contains "Prim" but not the word "Prime").
 function isPrimeItem(name){ return /\bPrime\b/.test(name||''); }
@@ -752,7 +770,8 @@ function buildCard(w){
   const d=document.createElement('div');
   const cs=w.craftStatus;
   const isPrime=isPrimeItem(w.name);
-  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'')+(isPrime?' prime-item':'');
+  const isImproved=w.uniqueName && improvedItemNames.has(w.uniqueName);
+  d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'')+(isPrime?' prime-item':'')+(isImproved?' status-improved':'');
   const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
   const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
   let craftTag='';
@@ -1666,6 +1685,27 @@ async function process(file){
     });
 
     missing=notMastered;
+
+    // Detect items whose craftStatus improved since the last load (e.g. a
+    // blueprint finished building, or a component you were missing got
+    // picked up) — these get a highlight pulse in render().
+    {
+      const prevSnap = loadItemStatusSnapshot();
+      const newSnap = {};
+      improvedItemNames = new Set();
+      missing.forEach(w=>{
+        if(!w.uniqueName) return;
+        newSnap[w.uniqueName] = w.craftStatus || null;
+        const prevStatus = prevSnap[w.uniqueName];
+        if(prevStatus !== undefined && prevStatus !== (w.craftStatus||null)){
+          const prevRank = STATUS_RANK[prevStatus] ?? 5;
+          const curRank = STATUS_RANK[w.craftStatus] ?? 5;
+          if(curRank < prevRank) improvedItemNames.add(w.uniqueName);
+        }
+      });
+      saveItemStatusSnapshot(newSnap);
+    }
+
     sellItems = buildSellItems(__allItems, mastered, ownedItems, pendingBPs, inProgressBPs, ownedBPs, miscItems, ownedBPsCount);
     ingredientWeapons = buildIngredientWeapons(__allItems, ownedItems);
     await Promise.all([_modsReady, _arcanesReady]);
