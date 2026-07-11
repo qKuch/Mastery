@@ -1194,10 +1194,12 @@ function computeDetailedBreakdown() {
     // (Artax, Deth Machine Rifle, etc.) at the same normal weapon cap.
     if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)){ add('sentinelWeapons', t, xp, 450000); return; }
     if(t.includes('/EntratiMech/')){ add('necramechs', t, xp, 1200000); return; }
-    // Plexus (Necramech's exalted weapon) — same 900k cap as computeMasteryXP's
-    // isPlexus rule. Grouped into 'necramechs' since that's the closest visible
-    // bucket in this breakdown (the real in-game screen doesn't split it out).
-    if(t.includes('Plexus')){ add('necramechs', t, xp, 900000); return; }
+    // Plexus (Necramech's exalted weapon) — confirmed via the WARFRAME Wiki's
+    // Mastery Rank page: "In-game 'Companions' Mastery breakdown includes
+    // Plexus." So it goes in the companions bucket, NOT necramechs, even
+    // though it's tied to the Necramech. Cap 900k (6000 MR XP), same rule
+    // already used in computeMasteryXP's isPlexus check.
+    if(t.includes('Plexus')){ add('companions', t, xp, 900000); return; }
     if(t.includes('/Sentinels/SentinelWeapons/')){ add('sentinelWeapons', t, xp, 450000); return; }
     if(t.includes('/Sentinels/SentinelPowersuits/')){ add('sentinels', t, xp, 900000); return; }
     if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')){ add('companions', t, xp, 900000); return; } // Khora's Venari
