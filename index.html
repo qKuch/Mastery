@@ -26,6 +26,16 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 .fb{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fb:hover{border-color:#c8a84b;color:#c8a84b}
 .fb.on{background:#2a2010;border-color:#c8a84b;color:#c8a84b}
+#prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease}
+#prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
+#prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
+#prime-filter-btn.pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pfPop{
+  0%{transform:scale(1) rotate(0deg)}
+  30%{transform:scale(1.18) rotate(-6deg)}
+  60%{transform:scale(.94) rotate(4deg)}
+  100%{transform:scale(1) rotate(0deg)}
+}
 .fc{background:#0f2010;border:1px solid #1a4020;border-radius:6px;color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fc:hover,.fc.on{background:#152a18;border-color:#4aaa60;color:#afffbf}
 .fs{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -494,10 +504,18 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 const KEY=[76,69,79,45,65,76,69,67,9,69,79,45,65,76,69,67];
 const IV=[49,50,70,71,66,51,54,45,76,69,51,45,113,61,57,0];
 
-let missing=[], activeCat='all', activeStatuses=new Set(), primeOnly=false;
+let missing=[], activeCat='all', activeStatuses=new Set(), primeFilter='all'; // 'all' | 'normal' | 'prime'
 // Matches "X Prime", "X Prime Y" etc. as a whole word — avoids false positives
 // like "Primary" (which contains "Prim" but not the word "Prime").
 function isPrimeItem(name){ return /\bPrime\b/.test(name||''); }
+function updatePrimeBtn(){
+  const btn=document.getElementById('prime-filter-btn');
+  if(!btn) return;
+  btn.classList.remove('pf-normal','pf-prime');
+  if(primeFilter==='normal'){ btn.textContent='⚙ Doar Normale'; btn.classList.add('pf-normal'); }
+  else if(primeFilter==='prime'){ btn.textContent='✨ Doar Prime'; btn.classList.add('pf-prime'); }
+  else { btn.textContent='🔀 Toate itemele'; }
+}
 
 function st(msg,cls){const e=document.getElementById('st');e.textContent=msg;e.className='status '+cls}
 
@@ -781,7 +799,7 @@ function render(){
     const mc=activeCat==='all'||w.category===activeCat;
     const mq=!q||w.name.toLowerCase().includes(q);
     const ms=activeStatuses.size===0||activeStatuses.has(w.craftStatus);
-    const mp=!primeOnly||isPrimeItem(w.name);
+    const mp=primeFilter==='all'?true:(primeFilter==='prime'?isPrimeItem(w.name):!isPrimeItem(w.name));
     return mc&&mq&&ms&&mp;
   });
   if(sort==='name'){
@@ -805,7 +823,7 @@ function render(){
 
   // Crafting section
   const craftingItems=missing.filter(w=>{
-    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||w.name.toLowerCase().includes(q))&&(!primeOnly||isPrimeItem(w.name));
+    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||w.name.toLowerCase().includes(q))&&(primeFilter==='all'?true:(primeFilter==='prime'?isPrimeItem(w.name):!isPrimeItem(w.name)));
   });
   const craftingSection=document.getElementById('crafting-section');
   const craftingGrid=document.getElementById('crafting-grid');
@@ -2326,10 +2344,13 @@ document.addEventListener('click', e=>{
     render();
   }
 
-  // Prime-only filter (Mastery tab)
+  // Prime-filter cycle (Mastery tab): all → normal → prime → all
   if(e.target.id==='prime-filter-btn'){
-    primeOnly=!primeOnly;
-    e.target.classList.toggle('on', primeOnly);
+    primeFilter = primeFilter==='all' ? 'normal' : primeFilter==='normal' ? 'prime' : 'all';
+    updatePrimeBtn();
+    e.target.classList.remove('pf-pop');
+    void e.target.offsetWidth; // restart animation
+    e.target.classList.add('pf-pop');
     render();
   }
 
@@ -2679,6 +2700,7 @@ async function tryAutoLoadFromHandle() {
   }
 }
 tryAutoLoadFromHandle();
+updatePrimeBtn();
 
 document.getElementById('sortSelect').addEventListener('change', render);
 
