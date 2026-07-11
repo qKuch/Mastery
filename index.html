@@ -29,7 +29,7 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
 #prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
-#prime-filter-btn.pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
+.pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
 @keyframes pfPop{
   0%{transform:scale(1) rotate(0deg)}
   30%{transform:scale(1.18) rotate(-6deg)}
@@ -2238,6 +2238,18 @@ function runCalculator(){
 document.getElementById('info-popup').addEventListener('click', e=>{
   if(e.target.id==='popup-close') document.getElementById('info-popup').classList.remove('show');
 });
+// Universal "pop" click feedback for every button in the app. Runs in the
+// capture phase so it still fires even for buttons (like .info-btn) whose
+// own click handlers call stopPropagation() during the bubble phase.
+document.addEventListener('click', e=>{
+  const poppedBtn = e.target.closest('button');
+  if(poppedBtn && !poppedBtn.disabled){
+    poppedBtn.classList.remove('pf-pop');
+    void poppedBtn.offsetWidth; // restart animation even on rapid re-clicks
+    poppedBtn.classList.add('pf-pop');
+  }
+}, true);
+
 document.addEventListener('click', e=>{
   const popup=document.getElementById('info-popup');
   if(popup.classList.contains('show') && !popup.contains(e.target) && !e.target.classList.contains('info-btn'))
@@ -2348,9 +2360,6 @@ document.addEventListener('click', e=>{
   if(e.target.id==='prime-filter-btn'){
     primeFilter = primeFilter==='all' ? 'normal' : primeFilter==='normal' ? 'prime' : 'all';
     updatePrimeBtn();
-    e.target.classList.remove('pf-pop');
-    void e.target.offsetWidth; // restart animation
-    e.target.classList.add('pf-pop');
     render();
   }
 
