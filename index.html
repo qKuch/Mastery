@@ -1176,6 +1176,13 @@ function computeDetailedBreakdown() {
     sentinels:0, sentinelWeapons:0, companions:0,
     archwing:0, archgun:0, archmelee:0, amps:0, necramechs:0, kdrive:0,
   };
+  const catItems = {}; // catKey -> [{t, xp, credited}]
+  Object.keys(cats).forEach(k=>{ catItems[k] = []; });
+  const add = (catKey, t, xp, cap) => {
+    const credited = Math.round(Math.min(xp,cap)/150);
+    cats[catKey] += Math.min(xp,cap)/150;
+    catItems[catKey].push({t, xp, credited});
+  };
   const MOTE_AMP = '/Lotus/Weapons/Sentients/OperatorAmplifiers/SentTrainingAmplifier/SentAmpTrainingBarrel';
   const SIROCCO = '/Lotus/Weapons/Operator/Pistols/DrifterPistol/DrifterPistolPlayerWeapon';
   (inv.XPInfo||[]).forEach(e=>{
@@ -1185,94 +1192,28 @@ function computeDetailedBreakdown() {
     // MOA/Hound weapon components ARE credited — confirmed via WFCD's
     // SentinelWeapons.json grouping them with classic Sentinel weapons
     // (Artax, Deth Machine Rifle, etc.) at the same normal weapon cap.
-    if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)){ cats.sentinelWeapons += Math.min(xp,450000)/150; return; }
-    if(t.includes('/EntratiMech/')){ cats.necramechs += Math.min(xp,1200000)/150; return; }
-    if(t.includes('/Sentinels/SentinelWeapons/')){ cats.sentinelWeapons += Math.min(xp,450000)/150; return; }
-    if(t.includes('/Sentinels/SentinelPowersuits/')){ cats.sentinels += Math.min(xp,900000)/150; return; }
-    if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')){ cats.companions += Math.min(xp,900000)/150; return; } // Khora's Venari
-    if(t.includes('/Powersuits/Archwing/')){ cats.archwing += Math.min(xp,900000)/150; return; }
-    if(t.includes('/Powersuits/')){ cats.warframes += Math.min(xp,900000)/150; return; }
-    if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')){ cats.companions += Math.min(xp,900000)/150; return; }
-    if(t.includes('/Vehicles/')){ cats.kdrive += Math.min(xp,900000)/150; return; }
-    if(t===MOTE_AMP || t===SIROCCO){ cats.amps += Math.min(xp,450000)/150; return; }
-    if(g_kitgunChamberSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.kitguns += Math.min(xp,cap)/150; return; }
-    if(g_ampPrismSet.has(t)){ const cap=TIER40_WEAPONS.has(t)?600000:450000; cats.amps += Math.min(xp,cap)/150; return; }
+    if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)){ add('sentinelWeapons', t, xp, 450000); return; }
+    if(t.includes('/EntratiMech/')){ add('necramechs', t, xp, 1200000); return; }
+    if(t.includes('/Sentinels/SentinelWeapons/')){ add('sentinelWeapons', t, xp, 450000); return; }
+    if(t.includes('/Sentinels/SentinelPowersuits/')){ add('sentinels', t, xp, 900000); return; }
+    if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')){ add('companions', t, xp, 900000); return; } // Khora's Venari
+    if(t.includes('/Powersuits/Archwing/')){ add('archwing', t, xp, 900000); return; }
+    if(t.includes('/Powersuits/')){ add('warframes', t, xp, 900000); return; }
+    if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')){ add('companions', t, xp, 900000); return; }
+    if(t.includes('/Vehicles/')){ add('kdrive', t, xp, 900000); return; }
+    if(t===MOTE_AMP || t===SIROCCO){ add('amps', t, xp, 450000); return; }
+    if(g_kitgunChamberSet.has(t)){ add('kitguns', t, xp, TIER40_WEAPONS.has(t)?600000:450000); return; }
+    if(g_ampPrismSet.has(t)){ add('amps', t, xp, TIER40_WEAPONS.has(t)?600000:450000); return; }
     const cap = TIER40_WEAPONS.has(t) ? 600000 : 450000;
-    const val = Math.min(xp,cap)/150;
     const catalogItem = g_itemByUniqueName.get(t);
     const gcat = catalogItem ? catalogItem.category : null;
-    if(t.includes('/Vehicles/')){ cats.primary += val; window.__fallbackHits = window.__fallbackHits||[]; window.__fallbackHits.push({t,xp,val:Math.round(val),reason:'vehicle-no-cat'}); return; }
-    if(gcat==='Primary') cats.primary += val;
-    else if(gcat==='Secondary') cats.secondary += val;
-    else if(gcat==='Melee') cats.melee += val;
-    else if(gcat==='Arch-Gun') cats.archgun += val;
-    else if(gcat==='Arch-Melee') cats.archmelee += val;
-    else {
-      cats.primary += val; // fallback: uncatalogued weapon-type item (rare)
-      window.__fallbackHits = window.__fallbackHits||[];
-      window.__fallbackHits.push({t,xp,val:Math.round(val),reason:'no-catalog-match'});
-    }
+    if(gcat==='Primary') add('primary', t, xp, cap);
+    else if(gcat==='Secondary') add('secondary', t, xp, cap);
+    else if(gcat==='Melee') add('melee', t, xp, cap);
+    else if(gcat==='Arch-Gun') add('archgun', t, xp, cap);
+    else if(gcat==='Arch-Melee') add('archmelee', t, xp, cap);
+    else add('primary', t, xp, cap); // fallback: uncatalogued weapon-type item (rare) — flagged below
   });
-  if(window.__fallbackHits && window.__fallbackHits.length){
-    console.log('[MasteryChecker debug] breakdown fallback-to-Primary hits: ' + JSON.stringify(window.__fallbackHits));
-    window.__fallbackHits = [];
-  }
-  // Precise audit: list every entry counted as "Warframes" with exact credit,
-  // so a real Math check against 488,400 is possible instead of guessing.
-  const wfList = (inv.XPInfo||[]).filter(e=>{
-    const t = e.ItemType||'';
-    if(!t.includes('/Powersuits/')) return false;
-    if(t.includes('/Powersuits/Archwing/')) return false;
-    if(/\/Kavat\//.test(t)) return false;
-    return true;
-  }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,900000)/150)}))
-    .sort((a,b)=>a.credited-b.credited);
-  const wfSum = wfList.reduce((s,x)=>s+x.credited,0);
-  console.log('[MasteryChecker debug] Warframes list (' + wfList.length + ', sum=' + wfSum + '): ' + JSON.stringify(wfList));
-
-  // Precise audit: Primary Weapons — exact list + sum, sorted by credit, to
-  // spot any anomaly (non-3000/4000 credit = partial or misclassified item).
-  const primaryList = (inv.XPInfo||[]).filter(e=>{
-    const t = e.ItemType||'';
-    if(t.includes('/Game/CrewShip/') || t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return false;
-    if(t.includes('/EntratiMech/') || t.includes('Plexus') || t.includes('/Sentinels/') || t.includes('/Powersuits/')) return false;
-    if(t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/')) return false;
-    if(g_kitgunChamberSet.has(t) || g_ampPrismSet.has(t)) return false;
-    const catalogItem = g_itemByUniqueName.get(t);
-    const gcat = catalogItem ? catalogItem.category : null;
-    return gcat==='Primary' || (!gcat && !t.includes('/Vehicles/'));
-  }).map(e=>{
-    const t=e.ItemType||''; const cap=TIER40_WEAPONS.has(t)?600000:450000;
-    return {t, xp:e.XP, credited: Math.round(Math.min(e.XP||0,cap)/150)};
-  }).sort((a,b)=>a.credited-b.credited);
-  const primarySum = primaryList.reduce((s,x)=>s+x.credited,0);
-  console.log('[MasteryChecker debug] Primary list (' + primaryList.length + ', sum=' + primarySum + '): ' + JSON.stringify(primaryList));
-
-  // Precise audit: Companions — exact list + sum.
-  const compList = (inv.XPInfo||[]).filter(e=>{
-    const t = e.ItemType||'';
-    if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)) return false;
-    if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')) return true;
-    return t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') || t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/');
-  }).map(e=>({t:e.ItemType, xp:e.XP, credited: Math.round(Math.min(e.XP||0,900000)/150)}))
-    .sort((a,b)=>a.credited-b.credited);
-  const compSum = compList.reduce((s,x)=>s+x.credited,0);
-  console.log('[MasteryChecker debug] Companions list (' + compList.length + ', sum=' + compSum + '): ' + JSON.stringify(compList));
-
-  // Check unexplored fields that might carry hidden mastery-relevant data.
-  console.log('[MasteryChecker debug] DrifterMelee: ' + JSON.stringify(inv.DrifterMelee));
-  console.log('[MasteryChecker debug] OperatorAmps: ' + JSON.stringify(inv.OperatorAmps));
-  console.log('[MasteryChecker debug] EquippedInstrument: ' + JSON.stringify(inv.EquippedInstrument));
-  console.log('[MasteryChecker debug] Horses: ' + JSON.stringify(inv.Horses));
-  console.log('[MasteryChecker debug] Motorcycles: ' + JSON.stringify(inv.Motorcycles));
-  console.log('[MasteryChecker debug] DuviriInfo keys: ' + JSON.stringify(inv.DuviriInfo ? Object.keys(inv.DuviriInfo) : null));
-
-  // Check if Horse/Motorcycle (Duviri vehicles) have XPInfo entries — if so,
-  // and the real breakdown has no "Horses"/"Motorcycles" line, they're likely
-  // being over-credited just like the Railjack harness was.
-  const duviriVehicleXP = (inv.XPInfo||[]).filter(e=>/ErsatzHorse|Motorcycle/i.test(e.ItemType||''))
-    .map(e=>({t:e.ItemType, xp:e.XP}));
-  console.log('[MasteryChecker debug] Duviri vehicle XPInfo entries: ' + JSON.stringify(duviriVehicleXP));
   (inv.Missions||[]).forEach(m=>{
     const tag = m.Tag||'';
     if(JUNCTION_TAGS.has(tag)){
@@ -1290,9 +1231,10 @@ function computeDetailedBreakdown() {
   cats.railjackIntrinsics = ((ps.LPS_TACTICAL||0)+(ps.LPS_PILOTING||0)+(ps.LPS_GUNNERY||0)+(ps.LPS_ENGINEERING||0)+(ps.LPS_COMMAND||0)) * 1500;
   cats.drifterIntrinsics = ((ps.LPS_DRIFT_RIDING||0)+(ps.LPS_DRIFT_OPPORTUNITY||0)+(ps.LPS_DRIFT_COMBAT||0)+(ps.LPS_DRIFT_ENDURANCE||0)) * 1500;
 
+  Object.keys(catItems).forEach(k=>{ catItems[k].sort((a,b)=>a.credited-b.credited); });
   Object.keys(cats).forEach(k=>{ cats[k] = Math.round(cats[k]); });
   cats.total = Object.values(cats).reduce((a,b)=>a+b, 0);
-  return cats;
+  return { cats, catItems };
 }
 
 async function process(file){
@@ -2527,25 +2469,111 @@ drop.ondrop=async e=>{
   if(f) loadFile(f, null);
 };
 
+const BREAKDOWN_CATEGORIES = [
+  {key:'warframes', label:'Warframes'},
+  {key:'primary', label:'Primary Weapons'},
+  {key:'secondary', label:'Secondary Weapons'},
+  {key:'melee', label:'Melee Weapons'},
+  {key:'kitguns', label:'Kitguns'},
+  {key:'missions', label:'Missions', divider:true},
+  {key:'steelPath', label:'The Steel Path Missions'},
+  {key:'railjackIntrinsics', label:'Railjack Intrinsics'},
+  {key:'drifterIntrinsics', label:'Drifter Intrinsics'},
+  {key:'sentinels', label:'Sentinels', divider:true},
+  {key:'sentinelWeapons', label:'Sentinel Weapons'},
+  {key:'companions', label:'Companions'},
+  {key:'archwing', label:'Archwing', divider:true},
+  {key:'archgun', label:'Archgun'},
+  {key:'archmelee', label:'Archmelee'},
+  {key:'amps', label:'Amps'},
+  {key:'necramechs', label:'Necramechs'},
+  {key:'kdrive', label:'K-Drives'},
+];
+function loadBreakdownRealValues(){
+  try { return JSON.parse(localStorage.getItem('wf_breakdown_real')||'{}'); } catch(e){ return {}; }
+}
+function saveBreakdownRealValues(v){
+  try { localStorage.setItem('wf_breakdown_real', JSON.stringify(v)); } catch(e){}
+}
+function shortItemName(t){
+  const seg = (t||'').split('/').filter(Boolean).pop() || t;
+  return seg;
+}
+function updateBreakdownDiff(key, calc){
+  const input = document.querySelector(`.bd-real[data-cat="${key}"]`);
+  const diffEl = document.querySelector(`.bd-diff[data-cat="${key}"]`);
+  if(!input || !diffEl) return;
+  const raw = input.value.trim();
+  if(raw === ''){ diffEl.textContent = ''; return; }
+  const real = parseInt(raw.replace(/[^\d-]/g,''), 10);
+  if(isNaN(real)){ diffEl.textContent = ''; return; }
+  const diff = real - calc;
+  diffEl.textContent = (diff===0 ? '✓' : (diff>0?'+':'') + diff.toLocaleString());
+  diffEl.style.color = diff===0 ? '#7aeaaa' : '#e05555';
+  const realValues = loadBreakdownRealValues();
+  realValues[key] = raw;
+  saveBreakdownRealValues(realValues);
+}
 function renderBreakdownPanel(){
   const panel = document.getElementById('breakdown-panel');
-  const b = computeDetailedBreakdown();
-  if(!b){ panel.innerHTML = '<div style="color:#e05555;font-size:.75rem">Încarcă întâi un fișier .dat.</div>'; panel.style.display=''; return; }
-  const row = (label, val) => `<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="color:#c8a84b">${label}</span><span style="color:#e8e8e8;font-weight:600">${val.toLocaleString()}</span></div>`;
-  const sect = (...rows) => `<div style="margin-bottom:.7rem">${rows.join('')}</div>`;
-  panel.innerHTML = `
-    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid #3a3020;border-radius:8px;padding:1rem;max-width:420px;font-size:.8rem">
-      <div style="color:#f0d080;font-weight:700;font-size:.9rem;margin-bottom:.8rem;letter-spacing:.05em">MASTERY BREAKDOWN (calculat)</div>
-      ${sect(row('Warframes', b.warframes), row('Primary Weapons', b.primary), row('Secondary Weapons', b.secondary), row('Melee Weapons', b.melee), row('Kitguns', b.kitguns))}
-      ${sect(row('Missions', b.missions), row('The Steel Path Missions', b.steelPath), row('Railjack Intrinsics', b.railjackIntrinsics), row('Drifter Intrinsics', b.drifterIntrinsics))}
-      ${sect(row('Sentinels', b.sentinels), row('Sentinel Weapons', b.sentinelWeapons), row('Companions', b.companions))}
-      ${sect(row('Archwing', b.archwing), row('Archgun', b.archgun), row('Archmelee', b.archmelee), row('Amps', b.amps), row('Necramechs', b.necramechs), row('K-Drives', b.kdrive))}
-      <div style="border-top:1px solid #3a3020;padding-top:.5rem;display:flex;justify-content:space-between;font-weight:700">
-        <span style="color:#f0d080">Total</span><span style="color:#fff">${b.total.toLocaleString()}</span>
+  const result = computeDetailedBreakdown();
+  if(!result){ panel.innerHTML = '<div style="color:#e05555;font-size:.75rem">Încarcă întâi un fișier .dat.</div>'; panel.style.display=''; return; }
+  const { cats, catItems } = result;
+  const realValues = loadBreakdownRealValues();
+
+  const rowsHtml = BREAKDOWN_CATEGORIES.map(({key,label,divider})=>{
+    const calc = cats[key]||0;
+    const items = catItems[key]||[];
+    const savedReal = realValues[key]||'';
+    return `${divider?'<div style="height:.5rem"></div>':''}
+      <div style="display:flex;align-items:center;gap:.4rem;padding:2px 0">
+        <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:#888;cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
+        <span style="color:#c8a84b;flex:1">${label}</span>
+        <span style="color:#e8e8e8;font-weight:600;width:5.5rem;text-align:right">${calc.toLocaleString()}</span>
+        <input class="bd-real" data-cat="${key}" type="text" inputmode="numeric" placeholder="real" value="${savedReal}" style="width:4.5rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:1px 4px;font-size:.7rem;text-align:right">
+        <span class="bd-diff" data-cat="${key}" style="width:3.5rem;text-align:right;font-size:.7rem;font-weight:700"></span>
       </div>
-      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Compară rând cu rând cu ecranul din joc (Profile → hover pe bara de mastery) ca să vezi exact unde apare vreo diferență.</div>
+      <div class="bd-items" data-cat="${key}" style="display:none;margin:.2rem 0 .3rem 1.4rem;padding:.3rem .5rem;background:#0d0d11;border-radius:4px;max-height:180px;overflow-y:auto;font-size:.65rem;color:#999"></div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid #3a3020;border-radius:8px;padding:1rem;max-width:460px;font-size:.8rem">
+      <div style="color:#f0d080;font-weight:700;font-size:.9rem;margin-bottom:.6rem;letter-spacing:.05em">MASTERY BREAKDOWN — calculat vs. real</div>
+      <div style="display:flex;gap:.4rem;font-size:.65rem;color:#666;margin-bottom:.4rem;padding-left:1.4rem">
+        <span style="flex:1"></span><span style="width:5.5rem;text-align:right">calculat</span><span style="width:4.5rem;text-align:right">real</span><span style="width:3.5rem;text-align:right">diferență</span>
+      </div>
+      ${rowsHtml}
+      <div style="border-top:1px solid #3a3020;padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
+        <span style="color:#f0d080">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
+      </div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Completează coloana "real" din poza ta din joc — diferența apare automat. Click pe ▸ arată lista exactă de iteme pentru acea categorie.</div>
     </div>`;
   panel.style.display = '';
+
+  BREAKDOWN_CATEGORIES.forEach(({key})=>{
+    const calc = cats[key]||0;
+    updateBreakdownDiff(key, calc);
+    const input = panel.querySelector(`.bd-real[data-cat="${key}"]`);
+    if(input) input.addEventListener('input', ()=>updateBreakdownDiff(key, calc));
+    const btn = panel.querySelector(`.bd-expand[data-cat="${key}"]`);
+    if(btn) btn.addEventListener('click', ()=>{
+      const itemsDiv = panel.querySelector(`.bd-items[data-cat="${key}"]`);
+      if(!itemsDiv) return;
+      const isOpen = itemsDiv.style.display !== 'none';
+      itemsDiv.style.display = isOpen ? 'none' : '';
+      btn.textContent = isOpen ? '▸' : '▾';
+      if(!isOpen && !itemsDiv.dataset.filled){
+        const items = catItems[key]||[];
+        itemsDiv.innerHTML = items.map(it=>
+          `<div style="display:flex;justify-content:space-between;gap:.4rem;padding:1px 0" title="${it.t}">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortItemName(it.t)}</span>
+            <span style="flex-shrink:0">${it.credited.toLocaleString()}</span>
+          </div>`
+        ).join('') || '<div style="color:#555">(gol)</div>';
+        itemsDiv.dataset.filled = '1';
+      }
+    });
+  });
 }
 document.getElementById('breakdown-btn').onclick = () => {
   const panel = document.getElementById('breakdown-panel');
