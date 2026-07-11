@@ -30,6 +30,9 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
 #prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
 .pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
+.bd-bar-wrap{height:4px;border-radius:2px;background:#1c1c22;margin:0 0 .35rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
+.bd-bar-wrap.show{opacity:1}
+.bd-bar-fill{height:100%;width:0%;border-radius:2px;transition:width .5s cubic-bezier(.22,1,.36,1),background .3s ease}
 .intro-el{opacity:0;transform:translateY(16px);animation:pageEnter .6s cubic-bezier(.22,1,.36,1) forwards}
 @keyframes pageEnter{to{opacity:1;transform:translateY(0)}}
 @keyframes pfPop{
@@ -510,6 +513,14 @@ let missing=[], activeCat='all', activeStatuses=new Set(), primeFilter='all'; //
 // Matches "X Prime", "X Prime Y" etc. as a whole word — avoids false positives
 // like "Primary" (which contains "Prim" but not the word "Prime").
 function isPrimeItem(name){ return /\bPrime\b/.test(name||''); }
+// Diacritic-insensitive search: "arca" now matches "Arcă", "sos" matches
+// "Șoc"/"Şoc", etc. Uses Unicode NFD decomposition to split each accented
+// character into its base letter + a separate combining mark, then strips
+// those marks — covers Romanian diacritics (ă â î ș/ş ț/ţ) and any other
+// Latin accents the same way.
+function normalizeSearch(str){
+  return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+}
 function updatePrimeBtn(){
   const btn=document.getElementById('prime-filter-btn');
   if(!btn) return;
@@ -794,12 +805,12 @@ function renderSection(items, container, colKey){
 }
 
 function render(){
-  const q=document.getElementById('search').value.toLowerCase();
+  const q=normalizeSearch(document.getElementById('search').value);
   const sort=document.getElementById('sortSelect').value;
   let f=missing.filter(w=>{
     if(w.craftStatus==='crafting') return false;
     const mc=activeCat==='all'||w.category===activeCat;
-    const mq=!q||w.name.toLowerCase().includes(q);
+    const mq=!q||normalizeSearch(w.name).includes(q);
     const ms=activeStatuses.size===0||activeStatuses.has(w.craftStatus);
     const mp=primeFilter==='all'?true:(primeFilter==='prime'?isPrimeItem(w.name):!isPrimeItem(w.name));
     return mc&&mq&&ms&&mp;
@@ -825,7 +836,7 @@ function render(){
 
   // Crafting section
   const craftingItems=missing.filter(w=>{
-    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||w.name.toLowerCase().includes(q))&&(primeFilter==='all'?true:(primeFilter==='prime'?isPrimeItem(w.name):!isPrimeItem(w.name)));
+    return w.craftStatus==='crafting'&&(activeCat==='all'||w.category===activeCat)&&(!q||normalizeSearch(w.name).includes(q))&&(primeFilter==='all'?true:(primeFilter==='prime'?isPrimeItem(w.name):!isPrimeItem(w.name)));
   });
   const craftingSection=document.getElementById('crafting-section');
   const craftingGrid=document.getElementById('crafting-grid');
@@ -1810,9 +1821,9 @@ const MAT_CAT_ORDER = [
 ];
 
 function renderMaterials(){
-  const q = document.getElementById('mat-search').value.toLowerCase();
+  const q = normalizeSearch(document.getElementById('mat-search').value);
   let f = allMaterials.filter(m=>{
-    const matchQ = !q || m.name.toLowerCase().includes(q);
+    const matchQ = !q || normalizeSearch(m.name).includes(q);
     const matchF = matFilter==='all' ||
       (matFilter==='missing' && m.have < m.need) ||
       (matFilter==='ok' && m.have >= m.need);
@@ -2519,14 +2530,38 @@ function shortItemName(t){
 function updateBreakdownDiff(key, calc){
   const input = document.querySelector(`.bd-real[data-cat="${key}"]`);
   const diffEl = document.querySelector(`.bd-diff[data-cat="${key}"]`);
+  const barWrap = document.querySelector(`.bd-bar-wrap[data-cat="${key}"]`);
+  const barFill = document.querySelector(`.bd-bar-fill[data-cat="${key}"]`);
   if(!input || !diffEl) return;
   const raw = input.value.trim();
-  if(raw === ''){ diffEl.textContent = ''; return; }
+  if(raw === ''){
+    diffEl.textContent = '';
+    if(barWrap) barWrap.classList.remove('show');
+    if(barFill) barFill.style.width = '0%';
+    return;
+  }
   const real = parseInt(raw.replace(/[^\d-]/g,''), 10);
-  if(isNaN(real)){ diffEl.textContent = ''; return; }
+  if(isNaN(real)){
+    diffEl.textContent = '';
+    if(barWrap) barWrap.classList.remove('show');
+    return;
+  }
   const diff = real - calc;
   diffEl.textContent = (diff===0 ? '✓' : (diff>0?'+':'') + diff.toLocaleString());
   diffEl.style.color = diff===0 ? '#7aeaaa' : '#e05555';
+  // Progress bar: how close calculated is to the real value. 100% = exact
+  // match (green). Under- or over-counting both show as amber/red, since
+  // either direction means something's still wrong.
+  if(barWrap && barFill){
+    if(real <= 0){
+      barWrap.classList.remove('show');
+    } else {
+      barWrap.classList.add('show');
+      const pct = Math.max(0, Math.min(100, (calc/real)*100));
+      barFill.style.width = pct + '%';
+      barFill.style.background = diff===0 ? '#5ad684' : (Math.abs(diff)/real < 0.02 ? '#e0b355' : '#e05555');
+    }
+  }
   const realValues = loadBreakdownRealValues();
   realValues[key] = raw;
   saveBreakdownRealValues(realValues);
@@ -2550,6 +2585,7 @@ function renderBreakdownPanel(){
         <input class="bd-real" data-cat="${key}" type="text" inputmode="numeric" placeholder="real" value="${savedReal}" style="width:4.5rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:1px 4px;font-size:.7rem;text-align:right">
         <span class="bd-diff" data-cat="${key}" style="width:3.5rem;text-align:right;font-size:.7rem;font-weight:700"></span>
       </div>
+      <div class="bd-bar-wrap" data-cat="${key}"><div class="bd-bar-fill" data-cat="${key}"></div></div>
       <div class="bd-items" data-cat="${key}" style="display:none;margin:.2rem 0 .3rem 1.4rem;padding:.3rem .5rem;background:#0d0d11;border-radius:4px;max-height:180px;overflow-y:auto;font-size:.65rem;color:#999"></div>`;
   }).join('');
 
@@ -2664,10 +2700,10 @@ updatePrimeBtn();
 document.getElementById('sortSelect').addEventListener('change', render);
 
 document.getElementById('sell-copybtn').onclick=()=>{
-  const q=document.getElementById('sell-search').value.toLowerCase();
+  const q=normalizeSearch(document.getElementById('sell-search').value);
   const f=sellItems.filter(w=>{
     const mc=activeSellCat==='all'||w.category===activeSellCat;
-    return mc&&(!q||w.name.toLowerCase().includes(q));
+    return mc&&(!q||normalizeSearch(w.name).includes(q));
   });
   navigator.clipboard.writeText(f.map(w=>w.name+' set').join('\n'));
   const b=document.getElementById('sell-copybtn');
@@ -2677,11 +2713,11 @@ document.getElementById('sell-copybtn').onclick=()=>{
 
 // Copy button — respects active category, status filters and search
 document.getElementById('copybtn').onclick=()=>{
-  const q=document.getElementById('search').value.toLowerCase();
+  const q=normalizeSearch(document.getElementById('search').value);
   const f=missing.filter(w=>{
     const mc=activeCat==='all'||w.category===activeCat;
     const ms=activeStatuses.size===0||activeStatuses.has(w.craftStatus);
-    return mc&&ms&&(!q||w.name.toLowerCase().includes(q));
+    return mc&&ms&&(!q||normalizeSearch(w.name).includes(q));
   });
   navigator.clipboard.writeText(f.map(w=>w.name).join('\n'));
   const b=document.getElementById('copybtn');
@@ -2805,7 +2841,7 @@ function buildIngredientWeapons(allItems, ownedItems) {
 function renderIngredients(){
   const q = (document.getElementById('ing-search')?.value||'').toLowerCase();
   const f = ingredientWeapons.filter(i =>
-    !q || i.name.toLowerCase().includes(q) || i.usedIn.some(n => n.toLowerCase().includes(q))
+    !q || normalizeSearch(i.name).includes(q) || i.usedIn.some(n => normalizeSearch(n).includes(q))
   );
   const countEl = document.getElementById('ing-countlbl');
   const grid = document.getElementById('ing-grid');
@@ -3050,9 +3086,9 @@ function buildDupeMods(inv) {
 }
 
 function renderMods() {
-  const q = document.getElementById('mods-search').value.toLowerCase();
+  const q = normalizeSearch(document.getElementById('mods-search').value);
   let f = dupeMods.filter(m => {
-    const matchQ = !q || m.name.toLowerCase().includes(q);
+    const matchQ = !q || normalizeSearch(m.name).includes(q);
     const matchF = modsFilter === 'all' || m.rarity === modsFilter;
     return matchQ && matchF;
   });
@@ -3157,9 +3193,9 @@ function renderArcanes() {
   const countEl = document.getElementById('arcanes-countlbl');
   const grid = document.getElementById('arcanes-grid');
   if(!searchEl || !grid) return;
-  const q = searchEl.value.toLowerCase();
+  const q = normalizeSearch(searchEl.value);
   let f = dupeArcanes.filter(a => {
-    const matchQ = !q || a.name.toLowerCase().includes(q);
+    const matchQ = !q || normalizeSearch(a.name).includes(q);
     const matchF = arcanesFilter === 'all' || a.cat === arcanesFilter;
     return matchQ && matchF;
   });
@@ -3190,10 +3226,10 @@ function renderArcanes() {
 }
 
 function renderSell() {
-  const q = document.getElementById('sell-search').value.toLowerCase().trim();
+  const q = normalizeSearch(document.getElementById('sell-search').value).trim();
   const f = sellItems.filter(w => {
     const mc = activeSellCat === 'all' || w.category === activeSellCat;
-    return mc && (!q || w.name.toLowerCase().includes(q));
+    return mc && (!q || normalizeSearch(w.name).includes(q));
   });
   document.getElementById('sell-countlbl').textContent = `${f.length} seturi safe to sell`;
 
