@@ -1104,12 +1104,19 @@ function computeMasteryXP(inv) {
       const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
         const t = e.ItemType||'';
         const xp = e.XP || 0;
-        // The Railjack ship/harness itself ("DefaultHarness") isn't a mastery-
-        // granting item — confirmed via the real Mastery Breakdown, which has
-        // no "Railjack" line at all. Its XP is for ship leveling, unrelated.
-        if(t.includes('/Game/CrewShip/')) return sum;
+        // DefaultHarness IS the Plexus's mastery XP pool — confirmed by direct
+        // inspection: there is no separate "Plexus" ItemType anywhere in
+        // XPInfo. This entry's raw XP is shared with the Railjack's own
+        // ship-leveling affinity (hence values far exceeding any normal cap,
+        // e.g. 6-7 million), but only the first 900k of it counts toward
+        // mastery — same rank-30-cap rule as every other item — and the real
+        // in-game Mastery Breakdown folds that credit into "Companions" (per
+        // the WARFRAME Wiki's Mastery Rank page: "In-game 'Companions'
+        // Mastery breakdown includes Plexus."). Every OTHER CrewShip-prefixed
+        // entry (actual ship components) is still excluded below.
+        const isPlexus = t === '/Lotus/Types/Game/CrewShip/RailJack/DefaultHarness';
+        if(!isPlexus && t.includes('/Game/CrewShip/')) return sum;
         const isNecramech = t.includes('/EntratiMech/');
-        const isPlexus = t.includes('Plexus');
         // MOA/Hound "MoaPetComponents"/"ZanukaPet*Weapon" paths ARE credited —
         // confirmed via WFCD's own SentinelWeapons.json: DE groups these
         // detachable companion weapons in the SAME category as classic Sentinel
@@ -1188,18 +1195,21 @@ function computeDetailedBreakdown() {
   (inv.XPInfo||[]).forEach(e=>{
     const t = e.ItemType||'';
     const xp = e.XP||0;
-    if(t.includes('/Game/CrewShip/')) return; // Railjack ship/harness itself, not mastery-granting
+    // DefaultHarness IS the Plexus's mastery XP pool — there's no separate
+    // "Plexus" ItemType anywhere in XPInfo. Its raw XP is shared with the
+    // Railjack's own ship-leveling affinity (hence huge values, 6-7 million+),
+    // but only the first 900k counts toward mastery, same as any other
+    // rank-30-capped item. The real in-game Mastery Breakdown folds this into
+    // "Companions" (WARFRAME Wiki, Mastery Rank page: "In-game 'Companions'
+    // Mastery breakdown includes Plexus."). Every OTHER CrewShip-prefixed
+    // entry (actual ship components) is excluded as before.
+    if(t === '/Lotus/Types/Game/CrewShip/RailJack/DefaultHarness'){ add('companions', t, xp, 900000); return; }
+    if(t.includes('/Game/CrewShip/')) return; // Railjack ship components, not mastery-granting
     // MOA/Hound weapon components ARE credited — confirmed via WFCD's
     // SentinelWeapons.json grouping them with classic Sentinel weapons
     // (Artax, Deth Machine Rifle, etc.) at the same normal weapon cap.
     if(t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t)){ add('sentinelWeapons', t, xp, 450000); return; }
     if(t.includes('/EntratiMech/')){ add('necramechs', t, xp, 1200000); return; }
-    // Plexus (Necramech's exalted weapon) — confirmed via the WARFRAME Wiki's
-    // Mastery Rank page: "In-game 'Companions' Mastery breakdown includes
-    // Plexus." So it goes in the companions bucket, NOT necramechs, even
-    // though it's tied to the Necramech. Cap 900k (6000 MR XP), same rule
-    // already used in computeMasteryXP's isPlexus check.
-    if(t.includes('Plexus')){ add('companions', t, xp, 900000); return; }
     if(t.includes('/Sentinels/SentinelWeapons/')){ add('sentinelWeapons', t, xp, 450000); return; }
     if(t.includes('/Sentinels/SentinelPowersuits/')){ add('sentinels', t, xp, 900000); return; }
     if(/\/Kavat\//.test(t) && t.includes('/Powersuits/')){ add('companions', t, xp, 900000); return; } // Khora's Venari
