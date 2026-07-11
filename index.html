@@ -1125,92 +1125,40 @@ const JUNCTION_TAGS = new Set([
   "UranusToNeptuneJunction","NeptuneToPlutoJunction","PlutoToErisJunction",
   "ErisToSednaJunction",
 ]);
+// computeMasteryXP is now just a thin wrapper around computeDetailedBreakdown.
+// Previously this had its own parallel item-classification logic (isNecramech/
+// isPlexus/isWF/TIER40/else), duplicated from computeDetailedBreakdown's more
+// granular per-category rules. Keeping two separate implementations of "what
+// cap applies to this item" is exactly what caused the 18,000 XP mismatch
+// diagnosed and fixed today (MOA/Hound weapon components silently getting a
+// 900k cap here vs the correct 450k cap in computeDetailedBreakdown). There
+// is now exactly ONE place that decides how an item is classified and capped;
+// computeMasteryXP just sums the result, so it's structurally impossible for
+// the two to disagree again.
 function computeMasteryXP(inv) {
-  const _xpDebug = { necramechXP:0, plexusXP:0, tier40XP:0, normalItemXP:0, wfXP:0 };
-      const itemXP = (inv.XPInfo||[]).reduce((sum, e) => {
-        const t = e.ItemType||'';
-        const xp = e.XP || 0;
-        // DefaultHarness IS the Plexus's mastery XP pool — confirmed by direct
-        // inspection: there is no separate "Plexus" ItemType anywhere in
-        // XPInfo. This entry's raw XP is shared with the Railjack's own
-        // ship-leveling affinity (hence values far exceeding any normal cap,
-        // e.g. 6-7 million), but only the first 900k of it counts toward
-        // mastery — same rank-30-cap rule as every other item — and the real
-        // in-game Mastery Breakdown folds that credit into "Companions" (per
-        // the WARFRAME Wiki's Mastery Rank page: "In-game 'Companions'
-        // Mastery breakdown includes Plexus."). Every OTHER CrewShip-prefixed
-        // entry (actual ship components) is still excluded below.
-        const isPlexus = t === '/Lotus/Types/Game/CrewShip/RailJack/DefaultHarness';
-        if(!isPlexus && t.includes('/Game/CrewShip/')) return sum;
-        const isNecramech = t.includes('/EntratiMech/');
-        // MOA/Hound weapon components — these paths contain "/Friendly/Pets/"
-        // just like companion bodies do, so without this explicit check they
-        // fall into the generic isWF bucket below (cap 900k). But per the
-        // comment above (verified against a real Mastery Breakdown), these
-        // are Sentinel-Weapons-tier items, capped at 450k like any other
-        // weapon. Must be checked BEFORE isWF or they get mis-capped.
-        const isMoaHoundWeapon = t.includes('MoaPetComponents') || /ZanukaPet.*Weapon/i.test(t);
-        // MOA/Hound "MoaPetComponents"/"ZanukaPet*Weapon" paths ARE credited —
-        // confirmed via WFCD's own SentinelWeapons.json: DE groups these
-        // detachable companion weapons in the SAME category as classic Sentinel
-        // weapons (Artax, Deth Machine Rifle, etc.), at the same normal weapon
-        // cap (450k/3000), not the companion-body cap. Verified against a real
-        // Mastery Breakdown: 5 such weapons × 3000 exactly closed a 15,000 gap
-        // in "Sentinel Weapons" that had been miscounted as 0 before.
-        const isWF = t.includes('/Powersuits/') || t.includes('/Sentinels/SentinelPowersuits/') ||
-                     t.includes('/Game/KubrowPet/') || t.includes('/Game/CatbrowPet/') ||
-                     t.includes('/Friendly/Pets/') || t.includes('/NeutralCreatures/') ||
-                     t.includes('/Vehicles/');
-        let cap, cat;
-        if(isNecramech){ cap = 1200000; cat='necramechXP'; }
-        else if(isMoaHoundWeapon){ cap = 450000; cat='normalItemXP'; }
-        else if(isPlexus){ cap = 900000; cat='plexusXP'; }
-        else if(isWF){ cap = 900000; cat='wfXP'; }
-        else if(TIER40_WEAPONS.has(t)){ cap = 600000; cat='tier40XP'; }
-        else { cap = 450000; cat='normalItemXP'; }
-        const val = Math.min(xp, cap) / 150;
-        _xpDebug[cat] += val;
-        return sum + val;
-      }, 0);
-      // Lookup is comprehensive (169 mastery-granting nodes, sums to exactly
-      // 14,569 — verified against the wiki's official total).
-      // Steel Path: a truthy Tier field means this node/junction was ALSO
-      // cleared in Steel Path, which grants the SAME value again (confirmed
-      // via calamity-inc/browse.wf's parser AND independently verified EXACT
-      // against a real player's in-game Mastery Breakdown: computed 8,919
-      // Steel Path XP matched the real screen's "8,919 The Steel Path
-      // Missions" number precisely). Junctions show up as their own entries
-      // in inv.Missions too (Tag = internal junction name, e.g.
-      // "EarthToVenusJunction"); their BASE 1000 credit is already counted
-      // via ClaimedJunctionChallengeRewards below, so here only the Steel
-      // Path re-clear bonus (+1000) is added when Tier is set.
-      const missionXP = (inv.Missions||[]).reduce((sum, m) => {
-        const tag = m.Tag || '';
-        if(JUNCTION_TAGS.has(tag)) {
-          return sum + (m.Tier ? 1000 : 0); // Steel Path re-clear bonus only
-        }
-        const val = NODE_MASTERY_XP[tag] || 0;
-        const steelPathBonus = m.Tier ? val : 0;
-        return sum + val + steelPathBonus;
-      }, 0);
-      const junctionCodes = new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2)));
-      const junctionXP = junctionCodes.size * 1000;
-      const ps = inv.PlayerSkills || {};
-      const railjackRanks = (ps.LPS_TACTICAL||0) + (ps.LPS_PILOTING||0) + (ps.LPS_GUNNERY||0) + (ps.LPS_ENGINEERING||0) + (ps.LPS_COMMAND||0);
-      const drifterRanks = (ps.LPS_DRIFT_RIDING||0) + (ps.LPS_DRIFT_OPPORTUNITY||0) + (ps.LPS_DRIFT_COMBAT||0) + (ps.LPS_DRIFT_ENDURANCE||0);
-      const intrinsicsXP = (railjackRanks + drifterRanks) * 1500;
-      Object.assign(_xpDebug, { itemXP:Math.round(itemXP), missionXP:Math.round(missionXP), junctionXP, intrinsicsXP, junctionCount:junctionCodes.size, railjackRanks, drifterRanks });
-      _xpDebug.total = Math.round(itemXP) + Math.round(missionXP) + junctionXP + intrinsicsXP;
-      return _xpDebug;
+  const bd = computeDetailedBreakdown(inv);
+  if(!bd) return { total: 0 };
+  const { cats } = bd;
+  // Debug object kept for the console diagnostic line — now mirrors the same
+  // categories shown in the in-game-comparable breakdown panel, instead of
+  // the old internal-only bucket names (necramechXP/plexusXP/tier40XP/...),
+  // so the debug output and the UI panel are always describing the same math.
+  return {
+    ...cats,
+    railjackRanks: (() => { const ps=inv.PlayerSkills||{}; return (ps.LPS_TACTICAL||0)+(ps.LPS_PILOTING||0)+(ps.LPS_GUNNERY||0)+(ps.LPS_ENGINEERING||0)+(ps.LPS_COMMAND||0); })(),
+    drifterRanks: (() => { const ps=inv.PlayerSkills||{}; return (ps.LPS_DRIFT_RIDING||0)+(ps.LPS_DRIFT_OPPORTUNITY||0)+(ps.LPS_DRIFT_COMBAT||0)+(ps.LPS_DRIFT_ENDURANCE||0); })(),
+    junctionCount: new Set((inv.ClaimedJunctionChallengeRewards||[]).map(j => (j||'').slice(0,2))).size,
+    total: cats.total,
+  };
 }
 
-// Detailed breakdown matching the in-game "Mastery Breakdown" screen's exact
-// categories, for direct side-by-side comparison. Reuses the same core rules
-// as computeMasteryXP (validated against real data), just split by category
-// instead of collapsed into a few internal buckets.
-function computeDetailedBreakdown() {
-  if(!g_inv || !g_itemByUniqueName) return null;
-  const inv = g_inv;
+// The single source of truth for "how much mastery XP does this item/mission/
+// intrinsic grant". Matches the in-game "Mastery Breakdown" screen's exact
+// categories, for direct side-by-side comparison. computeMasteryXP() (above)
+// is just a thin wrapper that sums these categories — see its comment for why.
+function computeDetailedBreakdown(invOverride) {
+  const inv = invOverride || g_inv;
+  if(!inv || !g_itemByUniqueName) return null;
   const cats = {
     warframes:0, primary:0, secondary:0, melee:0, kitguns:0,
     missions:0, steelPath:0, railjackIntrinsics:0, drifterIntrinsics:0,
