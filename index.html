@@ -14,13 +14,15 @@
   --accent-rgb:200,168,75; --accent-light-rgb:240,208,128;
   --radius-lg:10px; --radius-btn:6px; --card-border-w:1px; --letter-spacing:normal;
   --bg-pattern:none;
+  --bg-base:#0d0d0f; --card-bg:#18181c; --wcard-bg:#111116; --text-color:#e0e0e0;
+  --font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
+body{font-family:var(--font-family);background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) var(--bg-base);color:var(--text-color);min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
 @keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
 html[data-theme="infested"] body{animation:infestedBreathe 6s ease-in-out infinite}
 h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;position:relative;z-index:30}
 .sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
-.card{background:#18181c;border:1px solid #2a2a30;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
+.card{background:var(--card-bg);border:1px solid #2a2a30;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
 .drop{border:2px dashed #3a3a45;border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
 .drop:hover,.drop.over{border-color:var(--accent);background:#1a1a10}
 .drop input{display:none}
@@ -32,9 +34,9 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 .s-err{background:#2a1010;color:#ff7a7a;border:1px solid #552a2a;display:block}
 .s-ok{background:#0f2018;color:#7aff9a;border:1px solid #1a5030;display:block}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.9rem}
-.toolbar input[type=text]{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#e0e0e0;padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
+.toolbar input[type=text]{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--text-color);padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
 .toolbar input[type=text]:focus{outline:none;border-color:var(--accent)}
-.fb{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fb{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fb:hover{border-color:var(--accent);color:var(--accent)}
 .fb.on{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent)}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease,text-shadow .3s ease}
@@ -54,7 +56,7 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 }
 .fc{background:#0f2010;border:1px solid #1a4020;border-radius:var(--radius-btn);color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fc:hover,.fc.on{background:#152a18;border-color:#4aaa60;color:#afffbf}
-.fs{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fs{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fs:hover{border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="claimable"]{background:#2a2000;border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="owned"]{background:#0d1e30;border-color:#1a3a60;color:#7aaeff}
@@ -63,7 +65,7 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center}
 select.fb:focus{outline:none;border-color:var(--accent)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
-.sbox{background:#111116;border:1px solid #2a2a35;border-radius:8px;padding:.65rem .9rem;text-align:center}
+.sbox{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:8px;padding:.65rem .9rem;text-align:center}
 .snum{font-size:1.5rem;font-weight:500;color:var(--accent)}
 .slbl{font-size:.7rem;color:#666;margin-top:2px}
 .grid{max-height:calc(100vh - 420px);min-height:300px;overflow-y:auto;padding-right:4px;padding-top:6px;margin-top:-6px}
@@ -71,7 +73,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .grid::-webkit-scrollbar{width:5px}
 .grid::-webkit-scrollbar-track{background:#111;border-radius:3px}
 .grid::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:3px}
-.wcard{background:#111116;border:var(--card-border-w) solid #2a2a30;border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
+.wcard{background:var(--wcard-bg);border:var(--card-border-w) solid #2a2a30;border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
 .wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .wcard.claimable{border-color:var(--accent);background:var(--accent-bg3)}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
@@ -105,7 +107,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .crafting-header{font-size:.78rem;color:#bb88ff;font-weight:500;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
 .crafting-header::after{content:'';flex:1;height:1px;background:#3a2060}
 .crafting-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
-.wname{font-size:.88rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wname{font-size:.88rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcard-footer{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:4px;flex-wrap:wrap}
 .craft-tag{font-size:.65rem;padding:2px 6px;border-radius:3px;white-space:nowrap;font-weight:500}
 .tag-claim{background:#2a2000;color:var(--accent);border:1px solid var(--accent-border)}
@@ -170,8 +172,8 @@ select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/
 select.fb:focus{outline:none;border-color:var(--accent)}
 #results{display:none}
 .tabs{display:flex;gap:.5rem;margin-bottom:.0rem}
-.tab{background:#18181c;border:1px solid #2a2a35;border-radius:var(--radius-lg) var(--radius-lg) 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
-.tab.on{background:#111116;border-color:var(--accent);color:var(--accent)}
+.tab{background:var(--card-bg);border:1px solid #2a2a35;border-radius:var(--radius-lg) var(--radius-lg) 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
+.tab.on{background:var(--wcard-bg);border-color:var(--accent);color:var(--accent)}
 .tab-panel .card{border-radius:0 8px 8px 8px}
 .mat-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;margin-bottom:5px;transition:background .1s}
 .mat-row.miss{background:#180d0d;border:1px solid #3a1a1a}
@@ -197,7 +199,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .mat-indicator.miss{background:#ee4444}
 .mat-indicator.ok{background:#44aa60}
 .mat-info{min-width:0}
-.mat-name{font-size:.88rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mat-name{font-size:.88rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mat-items{font-size:.72rem;color:#666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mat-qty-block{text-align:right;white-space:nowrap;flex-shrink:0}
 .mat-qty-num{font-size:.95rem;font-weight:600}
@@ -226,13 +228,13 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .mod-rarity.primed{background:#c87840}
 .mod-rarity.legendary{background:#c840c8}
 .mod-info{flex:1;min-width:0}
-.mod-name{font-size:.85rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mod-name{font-size:.85rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mod-sub{font-size:.7rem;color:#666;margin-top:1px}
 .mod-count{font-size:.82rem;font-weight:700;color:var(--accent);white-space:nowrap}
 .mod-surplus{font-size:.7rem;color:#6adf9a;background:#0d2010;border:1px solid #1a4020;border-radius:3px;padding:1px 5px;white-space:nowrap}
 #mods-grid,#arcanes-grid,#ing-grid{display:flex;flex-direction:column;gap:.35rem}
 .sell-card{background:#0d1a0d;border:1px solid #2a5530;border-radius:6px;padding:.6rem .8rem;display:flex;flex-direction:column;justify-content:space-between;min-height:72px}
-.sell-name{font-size:.88rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.sell-name{font-size:.88rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
 .sell-reason{font-size:.68rem;padding:2px 6px;border-radius:3px;background:#1a4020;color:#7aff9a;border:1px solid #2a6030;white-space:nowrap}
 .sell-reason.reason-mastered{background:#1a2010;color:#8acd5a;border-color:#3a5020}
 .sell-reason.reason-owned{background:#0d1e30;color:#7aaeff;border-color:#1a3a60}
@@ -284,9 +286,9 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .calc-bar-legend{display:flex;gap:1rem;margin-top:.5rem;font-size:.72rem;color:#888;flex-wrap:wrap}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.6rem}
-.calc-box{background:#111116;border:1px solid #2a2a30;border-radius:8px;padding:.8rem 1rem}
+.calc-box{background:var(--wcard-bg);border:1px solid #2a2a30;border-radius:8px;padding:.8rem 1rem}
 .calc-box-title{font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem}
-.calc-box-val{font-size:1.4rem;font-weight:500;color:#e0e0e0}
+.calc-box-val{font-size:1.4rem;font-weight:500;color:var(--text-color)}
 .calc-box-sub{font-size:.75rem;color:#666;margin-top:.2rem}
 .calc-box.highlight{border-color:var(--accent);background:var(--accent-bg3)}
 .calc-box.highlight .calc-box-val{color:var(--accent)}
@@ -294,14 +296,14 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .calc-box.green .calc-box-val{color:#7aff9a}
 .calc-items-list{margin-top:1rem}
 .calc-items-title{font-size:.78rem;color:#888;margin-bottom:.5rem}
-.calc-item-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:#111116;border:1px solid #2a2a30;margin-bottom:3px;font-size:.82rem}
+.calc-item-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--wcard-bg);border:1px solid #2a2a30;margin-bottom:3px;font-size:.82rem}
 .calc-item-name{flex:1;color:#ccc}
 .calc-item-cat{font-size:.68rem;padding:1px 5px;border-radius:3px}
 .calc-item-xp{color:var(--accent);font-weight:500;white-space:nowrap}
 .theme-picker{position:relative;display:inline-block;vertical-align:middle;margin-left:.9rem}
-.theme-btn{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#ccc;padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+.theme-btn{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#ccc;padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
 .theme-btn:hover{border-color:var(--accent)}
-.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:#18181c;border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;display:none;flex-direction:column;gap:2px}
+.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:var(--card-bg);border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;display:none;flex-direction:column;gap:2px}
 .theme-menu.open{display:flex}
 .theme-opt{display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;background:none;border:none;text-align:left;color:#ccc;font-size:.8rem;font-family:inherit;width:100%}
 .theme-opt:hover{background:#222228}
@@ -333,10 +335,10 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 <div class="card intro-el" style="animation-delay:.16s;border-color:#2a3a20;background:#111610">
   <div style="font-size:.8rem;color:#8acd5a;font-weight:500;margin-bottom:.6rem">📋 Cum obții fișierul lastData.dat</div>
   <ol style="font-size:.8rem;color:#aaa;padding-left:1.2rem;line-height:1.9">
-    <li>Instalează <strong style="color:#e0e0e0">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:var(--accent)">alecaframe.com</a></li>
+    <li>Instalează <strong style="color:var(--text-color)">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:var(--accent)">alecaframe.com</a></li>
     <li>Pornește Warframe și lasă AlecaFrame să se sincronizeze (iconița din system tray)</li>
-    <li>Deschide <strong style="color:#e0e0e0">File Explorer</strong> și navighează la: <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;color:var(--accent)">%localappdata%\AlecaFrame</code></li>
-    <li>Găsești fișierul <strong style="color:#e0e0e0">lastData.dat</strong> — trage-l mai jos sau apasă pe „alege fișierul"</li>
+    <li>Deschide <strong style="color:var(--text-color)">File Explorer</strong> și navighează la: <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;color:var(--accent)">%localappdata%\AlecaFrame</code></li>
+    <li>Găsești fișierul <strong style="color:var(--text-color)">lastData.dat</strong> — trage-l mai jos sau apasă pe „alege fișierul"</li>
   </ol>
 </div>
 
@@ -470,9 +472,9 @@ button:focus-visible, a:focus-visible, input:focus-visible,
         <div class="calc-current" id="calc-current-display"></div>
         <div class="calc-target-row" style="flex-wrap:wrap;gap:.6rem;margin-top:.5rem;align-items:center">
           <span style="font-size:.82rem;color:#aaa">XP actual:</span>
-          <input type="number" id="calc-xp-override" min="0" style="width:150px;background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#e0e0e0;padding:.35rem .6rem;font-size:.9rem;text-align:center" title="Pre-completat din fișier. Pentru precizie maximă: ESC → Profile → hover pe bara de mastery">
+          <input type="number" id="calc-xp-override" min="0" style="width:150px;background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--text-color);padding:.35rem .6rem;font-size:.9rem;text-align:center" title="Pre-completat din fișier. Pentru precizie maximă: ESC → Profile → hover pe bara de mastery">
           <span style="font-size:.72rem;color:#555">| Target:</span>
-          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:#111116;border:1px solid #2a2a35;border-radius:6px;color:var(--accent);padding:.35rem .6rem;font-size:1rem;text-align:center">
+          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--accent);padding:.35rem .6rem;font-size:1rem;text-align:center">
           <button class="fb" id="calc-btn" style="background:#1a2010;border-color:#3a5020;color:#8acd5a">Calculează</button>
           <span style="font-size:.7rem;color:#444">💡 XP exact: ESC → Profile → hover pe bara de mastery</span>
         </div>
@@ -520,7 +522,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
       <!-- SETS panel -->
       <div id="sell-panel-sets">
         <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
-          Seturi pe care le poți vinde în siguranță — ai toate blueprint-urile, itemul e deja masterat sau ai o copie separată în inventar, <strong style="color:#e0e0e0">și</strong> îți rămâne un set întreg în plus după ce claimezi/finalizezi ce ai deja în Foundry.
+          Seturi pe care le poți vinde în siguranță — ai toate blueprint-urile, itemul e deja masterat sau ai o copie separată în inventar, <strong style="color:var(--text-color)">și</strong> îți rămâne un set întreg în plus după ce claimezi/finalizezi ce ai deja în Foundry.
         </p>
         <div class="toolbar" style="margin-bottom:.8rem">
           <input type="text" id="sell-search" placeholder="Caută set...">
@@ -542,7 +544,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
       <!-- MODS panel -->
       <div id="sell-panel-mods" style="display:none">
         <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
-          Moduri cu mai mult de o copie la rank maxim — surplus-ul poate fi vândut sau folosit pentru a crăfta <strong style="color:#e0e0e0">Endo</strong>.
+          Moduri cu mai mult de o copie la rank maxim — surplus-ul poate fi vândut sau folosit pentru a crăfta <strong style="color:var(--text-color)">Endo</strong>.
         </p>
         <div class="toolbar" style="margin-bottom:.8rem">
           <input type="text" id="mods-search" placeholder="Caută mod...">
@@ -2216,6 +2218,16 @@ const FULL_THEMES = {
     rgb:'90,200,122', lightRgb:'128,240,160', hue:138,
     radiusLg:'18px', radiusBtn:'14px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
   },
+  zariman: {
+    label:'Zariman (Terminal)', emoji:'📟', swatch:'#4dff9a',
+    accent:'#4dff9a', light:'#9dffcc', lighter:'#7dffb8', mid:'#5aff9f', dim:'#2a8a5a',
+    border:'#0a3a20', border2:'#0a2e1a', bg:'#0a1810', bg2:'#061208', bg3:'#020a05',
+    rgb:'77,255,154', lightRgb:'157,255,204', hue:152,
+    radiusLg:'0px', radiusBtn:'0px', borderW:'1px', letterSpacing:'.01em',
+    bgPattern:'repeating-linear-gradient(0deg,rgba(77,255,154,.025) 0px,rgba(77,255,154,.025) 1px,transparent 1px,transparent 3px)',
+    bgBase:'#000000', cardBg:'#050805', wcardBg:'#030503', textColor:'#c8ffe0',
+    fontFamily:"'Courier New',Consolas,Monaco,monospace",
+  },
 };
 function applyAccentTheme(name){
   const t = FULL_THEMES[name] || FULL_THEMES.tenno;
@@ -2237,6 +2249,11 @@ function applyAccentTheme(name){
   root.setProperty('--card-border-w', t.borderW);
   root.setProperty('--letter-spacing', t.letterSpacing);
   root.setProperty('--bg-pattern', t.bgPattern);
+  root.setProperty('--bg-base', t.bgBase || '#0d0d0f');
+  root.setProperty('--card-bg', t.cardBg || '#18181c');
+  root.setProperty('--wcard-bg', t.wcardBg || '#111116');
+  root.setProperty('--text-color', t.textColor || '#e0e0e0');
+  root.setProperty('--font-family', t.fontFamily || "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
   document.documentElement.setAttribute('data-theme', name);
   currentAccentHue = t.hue;
   applyMRBackgroundTheme(lastKnownMR);
@@ -3332,7 +3349,7 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
 
   const reserveNote = reserved
     ? `<div style="font-size:.72rem;color:#888;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #2a2a2a">
-        ⚠ Un set e reținut pentru tine — e cel deja în Foundry (${w.sellReason}). Cele <strong style="color:#e0e0e0">x${w.setCount}</strong> afișate pe card sunt seturi <strong style="color:#e0e0e0">în plus</strong>, separate de ce ai deja în construcție.
+        ⚠ Un set e reținut pentru tine — e cel deja în Foundry (${w.sellReason}). Cele <strong style="color:var(--text-color)">x${w.setCount}</strong> afișate pe card sunt seturi <strong style="color:var(--text-color)">în plus</strong>, separate de ce ai deja în construcție.
       </div>`
     : '';
 
