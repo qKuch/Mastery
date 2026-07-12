@@ -16,34 +16,41 @@
   --bg-pattern:none;
   --bg-base:#0d0d0f; --card-bg:#18181c; --wcard-bg:#111116; --text-color:#e0e0e0;
   --font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  /* Muted-text ladder + neutral surfaces — identity values here, so the 6
+     existing dark themes render byte-for-byte the same as before this was
+     introduced. Only the Duviri (light) theme overrides these. */
+  --tone-eee:#eee; --tone-e8:#e8e8e8; --tone-ccc:#ccc; --tone-aaa:#aaa; --tone-999:#999;
+  --tone-888:#888; --tone-777:#777; --tone-666:#666; --tone-555:#555; --tone-444:#444; --tone-333:#333;
+  --border-neutral:#2a2a30; --panel-deep:#0f0f14;
+  --panel-grad-1:#1a1712; --panel-grad-2:#100e0a; --text-strong:#fff;
 }
 body{font-family:var(--font-family);background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) var(--bg-base);color:var(--text-color);min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
 @keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
 html[data-theme="infested"] body{animation:infestedBreathe 6s ease-in-out infinite}
 h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;position:relative;z-index:30}
-.sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
-.card{background:var(--card-bg);border:1px solid #2a2a30;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
+.sub{font-size:.8rem;color:var(--tone-555);margin-bottom:1.5rem}
+.card{background:var(--card-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
 .drop{border:2px dashed #3a3a45;border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
 .drop:hover,.drop.over{border-color:var(--accent);background:#1a1a10}
 .drop input{display:none}
 .drop-icon{font-size:2rem;margin-bottom:.5rem}
-.drop-label{font-size:.9rem;color:#aaa}
+.drop-label{font-size:.9rem;color:var(--tone-aaa)}
 .drop-label strong{color:var(--accent);cursor:pointer}
 .status{font-size:.82rem;padding:.5rem .9rem;border-radius:6px;margin-top:.75rem;display:none}
 .s-info{background:#1a2030;color:#7aadff;border:1px solid #2a3a55;display:block}
 .s-err{background:#2a1010;color:#ff7a7a;border:1px solid #552a2a;display:block}
 .s-ok{background:#0f2018;color:#7aff9a;border:1px solid #1a5030;display:block}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.9rem}
-.toolbar input[type=text]{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--text-color);padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
+.toolbar input[type=text]{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:6px;color:var(--text-color);padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
 .toolbar input[type=text]:focus{outline:none;border-color:var(--accent)}
-.fb{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fb{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-btn);color:var(--tone-aaa);padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fb:hover{border-color:var(--accent);color:var(--accent)}
 .fb.on{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent)}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease,text-shadow .3s ease}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
 #prime-filter-btn.pf-prime{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent-light);text-shadow:0 0 8px rgba(var(--accent-light-rgb),.35)}
 .pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
-.bd-bar-wrap{height:4px;border-radius:2px;background:#1c1c22;margin:0 0 .1rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
+.bd-bar-wrap{height:4px;border-radius:2px;background:var(--panel-deep);margin:0 0 .1rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
 .bd-bar-wrap.show{opacity:1}
 .bd-bar-fill{height:100%;width:0%;border-radius:2px;transition:width .5s cubic-bezier(.22,1,.36,1),background .3s ease}
 .intro-el{opacity:0;transform:translateY(16px);animation:pageEnter .6s cubic-bezier(.22,1,.36,1) forwards}
@@ -56,7 +63,7 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 }
 .fc{background:#0f2010;border:1px solid #1a4020;border-radius:var(--radius-btn);color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fc:hover,.fc.on{background:#152a18;border-color:#4aaa60;color:#afffbf}
-.fs{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fs{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-btn);color:var(--tone-888);padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fs:hover{border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="claimable"]{background:#2a2000;border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="owned"]{background:#0d1e30;border-color:#1a3a60;color:#7aaeff}
@@ -65,15 +72,15 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center}
 select.fb:focus{outline:none;border-color:var(--accent)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
-.sbox{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:8px;padding:.65rem .9rem;text-align:center}
+.sbox{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:8px;padding:.65rem .9rem;text-align:center}
 .snum{font-size:1.5rem;font-weight:500;color:var(--accent)}
-.slbl{font-size:.7rem;color:#666;margin-top:2px}
+.slbl{font-size:.7rem;color:var(--tone-666);margin-top:2px}
 .grid{max-height:calc(100vh - 420px);min-height:300px;overflow-y:auto;padding-right:4px;padding-top:6px;margin-top:-6px}
 .grid.flat{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
 .grid::-webkit-scrollbar{width:5px}
 .grid::-webkit-scrollbar-track{background:#111;border-radius:3px}
 .grid::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:3px}
-.wcard{background:var(--wcard-bg);border:var(--card-border-w) solid #2a2a30;border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
+.wcard{background:var(--wcard-bg);border:var(--card-border-w) solid var(--border-neutral);border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
 .wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .wcard.claimable{border-color:var(--accent);background:var(--accent-bg3)}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
@@ -82,15 +89,15 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.55),inset 0 0 14px rgba(var(--accent-rgb),.06);position:relative}
 .wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.7),inset 0 0 14px rgba(var(--accent-rgb),.08),0 4px 12px rgba(0,0,0,.35)}
 .wcard.status-improved{animation:statusPulse 2s ease-out 1}
-.empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:#777}
+.empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:var(--tone-777)}
 .empty-state-icon{font-size:2.2rem;margin-bottom:.6rem}
-.empty-state-title{font-size:.95rem;color:#ccc;font-weight:500;margin-bottom:.3rem}
-.empty-state-sub{font-size:.78rem;color:#666}
+.empty-state-title{font-size:.95rem;color:var(--tone-ccc);font-weight:500;margin-bottom:.3rem}
+.empty-state-sub{font-size:.78rem;color:var(--tone-666)}
 .tab-fade-in{animation:tabFadeIn .22s ease}
 @keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
-.skel-card{height:58px;border-radius:var(--radius-btn);background:#16161a;border:1px solid #26262e;position:relative;overflow:hidden}
-.skel-bar{border-radius:4px;background:#16161a;position:relative;overflow:hidden}
+.skel-card{height:58px;border-radius:var(--radius-btn);background:var(--panel-deep);border:1px solid var(--border-neutral);position:relative;overflow:hidden}
+.skel-bar{border-radius:4px;background:var(--panel-deep);position:relative;overflow:hidden}
 .skel-card::after,.skel-bar::after{
   content:'';position:absolute;inset:0;
   background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.08),transparent);
@@ -127,7 +134,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .comp-row.row-bp{background:#1a1800}
 .comp-row.row-miss{background:#1f0d0d}
 .comp-icon{font-size:.85rem;flex-shrink:0;width:16px;text-align:center}
-.comp-name{flex:1;color:#ccc}
+.comp-name{flex:1;color:var(--tone-ccc)}
 .comp-qty{white-space:nowrap;font-size:.75rem;font-weight:500}
 .qty-ok{color:#7aff9a}
 .qty-bp{color:var(--accent-lighter)}
@@ -136,7 +143,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .status-ok{background:#1a4020;color:#7aff9a;border:1px solid #2a6030}
 .status-bp{background:#2a2000;color:var(--accent-lighter);border:1px solid var(--accent-border)}
 .status-miss{background:#2a0d0d;color:#ff7a7a;border:1px solid #551515}
-#info-popup .close-btn{position:absolute;top:8px;right:10px;background:none;border:none;color:#666;cursor:pointer;font-size:1rem;line-height:1}
+#info-popup .close-btn{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--tone-666);cursor:pointer;font-size:1rem;line-height:1}
 #info-popup .close-btn:hover{color:var(--accent)}
 .badge{display:inline-block;font-size:.68rem;padding:1px 6px;border-radius:3px;font-weight:500}
 .badge.bp{background:#2a1810;border:1px solid #5a3520;color:#e8955a}
@@ -146,24 +153,24 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .badge.bw{background:#0d2a28;border:1px solid #1a5550;color:#5adbc8}
 .badge.bc{background:#122a10;border:1px solid #2a5520;color:#8ad65a}
 .badge.bk{background:var(--accent-bg2);border:1px solid #554020;color:var(--accent-mid)}
-.badge.bo{background:#1a1a22;border:1px solid #33333f;color:#999}
+.badge.bo{background:#1a1a22;border:1px solid var(--border-neutral);color:var(--tone-999)}
 .bp{background:#1a2535;color:#7aadff}
 .bs{background:#1a2010;color:#8acd5a}
 .bm{background:#2a1a10;color:#cd8a5a}
 .ba{background:#1a1a2a;color:#aa8aff}
 .bw{background:#2a1535;color:#dd88ff}
-.bo{background:#1e1e1e;color:#888}
+.bo{background:#1e1e1e;color:var(--tone-888)}
 .copybtn{background:#1a2010;border:1px solid #3a5020;color:#8acd5a;border-radius:6px;padding:.45rem 1rem;font-size:.82rem;cursor:pointer;transition:all .15s}
 .copybtn:hover{border-color:var(--accent);color:var(--accent)}
-.count-label{font-size:.75rem;color:#555;margin-bottom:.6rem}
+.count-label{font-size:.75rem;color:var(--tone-555);margin-bottom:.6rem}
 /* Grouped sections */
 .section-group{margin-bottom:.6rem}
 .section-hdr{display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;padding:.3rem 0;margin-bottom:.4rem}
 .section-hdr:hover .section-title{color:var(--accent)}
-.section-arrow{font-size:.6rem;color:#555;transition:transform .2s;flex-shrink:0}
+.section-arrow{font-size:.6rem;color:var(--tone-555);transition:transform .2s;flex-shrink:0}
 .section-hdr.collapsed .section-arrow{transform:rotate(-90deg)}
-.section-title{font-size:.76rem;color:#888;font-weight:500;transition:color .15s}
-.section-count{font-size:.7rem;color:#555;margin-left:.2rem}
+.section-title{font-size:.76rem;color:var(--tone-888);font-weight:500;transition:color .15s}
+.section-count{font-size:.7rem;color:var(--tone-555);margin-left:.2rem}
 .section-line{flex:1;height:1px;background:#222228}
 .section-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;margin-bottom:.3rem}
 .section-grid.hidden{display:none}
@@ -172,7 +179,7 @@ select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/
 select.fb:focus{outline:none;border-color:var(--accent)}
 #results{display:none}
 .tabs{display:flex;gap:.5rem;margin-bottom:.0rem}
-.tab{background:var(--card-bg);border:1px solid #2a2a35;border-radius:var(--radius-lg) var(--radius-lg) 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
+.tab{background:var(--card-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-lg) var(--radius-lg) 0 0;color:var(--tone-888);padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
 .tab.on{background:var(--wcard-bg);border-color:var(--accent);color:var(--accent)}
 .tab-panel .card{border-radius:0 8px 8px 8px}
 .mat-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;margin-bottom:5px;transition:background .1s}
@@ -181,17 +188,17 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .mat-detail-panel{background:#0e0808;border:1px solid #2a1515;border-top:none;border-radius:0 0 6px 6px;padding:.5rem .75rem;margin-bottom:5px;margin-top:-5px}
 .mat-detail-row{display:flex;align-items:center;gap:.6rem;padding:.25rem 0;border-bottom:1px solid #1a1010}
 .mat-detail-row:last-child{border-bottom:none}
-.mat-detail-name{flex:1;font-size:.78rem;color:#ccc}
+.mat-detail-name{flex:1;font-size:.78rem;color:var(--tone-ccc)}
 .mat-detail-need{font-size:.75rem;color:var(--accent);font-weight:600;white-space:nowrap}
-.mat-detail-status{font-size:.68rem;color:#888;white-space:nowrap}
-.mat-detail-expand{width:12px;font-size:.6rem;color:#555;flex-shrink:0;transition:transform .15s}
+.mat-detail-status{font-size:.68rem;color:var(--tone-888);white-space:nowrap}
+.mat-detail-expand{width:12px;font-size:.6rem;color:var(--tone-555);flex-shrink:0;transition:transform .15s}
 .mat-detail-row.expandable:hover{background:#1a0f0f}
 .mat-detail-row.open .mat-detail-expand{transform:rotate(90deg)}
 .mat-sub-panel{background:#0a0505;border-left:2px solid #2a1010;margin-left:1.2rem;margin-bottom:.25rem;padding:.3rem .5rem;border-radius:0 4px 4px 0}
 .mat-sub-row{display:flex;align-items:center;gap:.5rem;padding:.15rem 0;font-size:.72rem}
-.mat-sub-name{flex:1;color:#aaa}
+.mat-sub-name{flex:1;color:var(--tone-aaa)}
 .mat-sub-name.miss{color:#e05555}
-.mat-sub-qty{color:#888;white-space:nowrap}
+.mat-sub-qty{color:var(--tone-888);white-space:nowrap}
 .mat-sub-qty.miss{color:#e05555;font-weight:600}
 .mat-row.ok{background:#0d1510;border:1px solid #1a3520}
 .mat-row.ok:hover{background:#0f1a12}
@@ -200,36 +207,36 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .mat-indicator.ok{background:#44aa60}
 .mat-info{min-width:0}
 .mat-name{font-size:.88rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mat-items{font-size:.72rem;color:#666;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mat-items{font-size:.72rem;color:var(--tone-666);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mat-qty-block{text-align:right;white-space:nowrap;flex-shrink:0}
 .mat-qty-num{font-size:.95rem;font-weight:600}
 .mat-qty-num.miss{color:#ff6060}
 .mat-qty-num.ok{color:#44cc70}
-.mat-qty-label{font-size:.7rem;color:#666;margin-top:1px}
+.mat-qty-label{font-size:.7rem;color:var(--tone-666);margin-top:1px}
 .mat-wiki{font-size:.68rem;padding:3px 8px;border-radius:4px;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;text-decoration:none;white-space:nowrap;transition:all .15s;flex-shrink:0}
 .mat-wiki:hover{background:#252540;border-color:var(--accent);color:var(--accent)}
 .mat-group{margin-bottom:1.2rem}
 .mat-group-header{display:flex;align-items:center;gap:.7rem;padding:.4rem .6rem;margin-bottom:.3rem;background:#111;border-left:3px solid var(--accent);border-radius:0 4px 4px 0}
 .mat-group-name{font-weight:600;font-size:.82rem;color:var(--accent);letter-spacing:.04em}
-.mat-group-count{font-size:.72rem;color:#888}
+.mat-group-count{font-size:.72rem;color:var(--tone-888)}
 .miss-badge{color:#e05555;font-weight:600}
 /* Sell tab */
 .sell-grid{display:block;max-height:calc(100vh - 380px);min-height:300px;overflow-y:auto;padding-right:4px}
 .sell-subtabs{display:flex;gap:.4rem;margin-bottom:1rem;border-bottom:1px solid #1a2a1a;padding-bottom:.6rem}
-.sell-subtab,.mastery-subtab{padding:.35rem .9rem;border-radius:6px 6px 0 0;border:1px solid #2a3a2a;background:#0a120a;color:#888;cursor:pointer;font-size:.8rem;transition:all .15s}
+.sell-subtab,.mastery-subtab{padding:.35rem .9rem;border-radius:6px 6px 0 0;border:1px solid #2a3a2a;background:#0a120a;color:var(--tone-888);cursor:pointer;font-size:.8rem;transition:all .15s}
 .sell-subtab.on,.mastery-subtab.on{background:#1a2a1a;border-color:#3a5a3a;color:var(--accent);font-weight:600}
-.sell-subtab:hover:not(.on),.mastery-subtab:hover:not(.on){background:#111a11;color:#aaa}
+.sell-subtab:hover:not(.on),.mastery-subtab:hover:not(.on){background:#111a11;color:var(--tone-aaa)}
 .mod-card{background:#0d1520;border:1px solid #1a3040;border-radius:6px;padding:.5rem .75rem;display:flex;align-items:center;gap:.75rem;min-height:52px}
 .mod-card:hover{background:#111a25}
 .mod-rarity{width:4px;border-radius:2px;align-self:stretch;flex-shrink:0}
-.mod-rarity.common{background:#888}
+.mod-rarity.common{background:var(--tone-888)}
 .mod-rarity.uncommon{background:#4a8a4a}
 .mod-rarity.rare{background:var(--accent)}
 .mod-rarity.primed{background:#c87840}
 .mod-rarity.legendary{background:#c840c8}
 .mod-info{flex:1;min-width:0}
 .mod-name{font-size:.85rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mod-sub{font-size:.7rem;color:#666;margin-top:1px}
+.mod-sub{font-size:.7rem;color:var(--tone-666);margin-top:1px}
 .mod-count{font-size:.82rem;font-weight:700;color:var(--accent);white-space:nowrap}
 .mod-surplus{font-size:.7rem;color:#6adf9a;background:#0d2010;border:1px solid #1a4020;border-radius:3px;padding:1px 5px;white-space:nowrap}
 #mods-grid,#arcanes-grid,#ing-grid{display:flex;flex-direction:column;gap:.35rem}
@@ -243,7 +250,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .sell-top{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px}
 .sell-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:auto}
 .sell-setcount{font-size:.75rem;font-weight:600;color:#7aff9a;background:#1a4020;border:1px solid #2a6030;border-radius:4px;padding:2px 7px;white-space:nowrap}
-.sell-bps{font-size:.68rem;color:#555;margin-top:2px}
+.sell-bps{font-size:.68rem;color:var(--tone-555);margin-top:2px}
 /* MR Progress */
 .mr-progress{display:flex;flex-direction:column;gap:.9rem}
 .mr-row{display:flex;flex-direction:column;gap:.35rem}
@@ -251,31 +258,31 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .mr-rank-badge{font-size:.72rem;font-weight:700;padding:2px 9px;border-radius:5px;letter-spacing:.02em;flex-shrink:0}
 .mr-rank-badge.current{background:linear-gradient(135deg,#3a2f10,#2a2408);color:#e8c86b;border:1px solid #6a5420}
 .mr-rank-badge.potential{background:linear-gradient(135deg,#0f2a1e,#0a2016);color:#7aeaaa;border:1px solid #2a6045;border-style:dashed}
-.mr-row-title{font-size:.72rem;color:#888;flex:1}
+.mr-row-title{font-size:.72rem;color:var(--tone-888);flex:1}
 .mr-row-pct{font-size:.85rem;font-weight:700;font-variant-numeric:tabular-nums}
 .mr-row-pct.current-pct{color:#e8c86b}
 .mr-row-pct.potential-pct{color:#7aeaaa}
-.mr-track{position:relative;height:14px;background:#15151c;border-radius:7px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
+.mr-track{position:relative;height:14px;background:var(--panel-deep);border-radius:7px;overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.5)}
 .mr-fill{position:absolute;top:0;left:0;height:100%;border-radius:7px;transition:width .3s ease}
 .mr-fill-current{background:linear-gradient(90deg,#a8863a,#e8c86b);box-shadow:0 0 8px rgba(232,200,107,.35)}
 .mr-fill-potential{background:linear-gradient(90deg,#2e6a4a,#5ecf8f);opacity:.55}
 .mr-track-marker{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.4)}
-.mr-row-foot{display:flex;justify-content:space-between;font-size:.68rem;color:#666}
+.mr-row-foot{display:flex;justify-content:space-between;font-size:.68rem;color:var(--tone-666)}
 .mr-ranks{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.1rem}
 .mr-rank-chip{font-size:.67rem;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
 .mr-rank-chip.done{background:#1a2010;color:#8acd5a;border-color:#3a5020}
 .mr-rank-chip.iscurrent{background:#2a2000;color:var(--accent-light);border-color:#e8c86b;box-shadow:0 0 0 1px rgba(232,200,107,.3)}
 .mr-rank-chip.reachable{background:#0f2a1e;color:#7aeaaa;border-color:#2a6045}
-.mr-rank-chip.far{background:#111118;color:#444;border-color:#222228}
-.mr-summary-line{font-size:.68rem;color:#666;border-top:1px solid #222228;padding-top:.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-.mr-summary-line strong{color:#999;font-weight:600}
+.mr-rank-chip.far{background:#111118;color:var(--tone-444);border-color:#222228}
+.mr-summary-line{font-size:.68rem;color:var(--tone-666);border-top:1px solid #222228;padding-top:.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.mr-summary-line strong{color:var(--tone-999);font-weight:600}
 /* Calculator */
 .calc-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}
-.calc-current{font-size:1rem;color:#ccc}
+.calc-current{font-size:1rem;color:var(--tone-ccc)}
 .calc-current strong{color:var(--accent);font-size:1.3rem}
 .calc-target-row{display:flex;align-items:center;gap:.6rem}
 .calc-bar-wrap{margin-bottom:1.25rem}
-.calc-bar-label{font-size:.8rem;color:#888;margin-bottom:.5rem;display:flex;justify-content:space-between}
+.calc-bar-label{font-size:.8rem;color:var(--tone-888);margin-bottom:.5rem;display:flex;justify-content:space-between}
 .calc-bar-bg{height:22px;background:#1a1a20;border-radius:11px;overflow:hidden;position:relative;display:flex}
 .calc-seg{height:100%;transition:width .4s;flex-shrink:0}
 .seg-claim{background:var(--accent)}
@@ -283,33 +290,33 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .seg-craft{background:#4aaa60}
 .seg-bp{background:#885520}
 .seg-empty{background:transparent;flex:1}
-.calc-bar-legend{display:flex;gap:1rem;margin-top:.5rem;font-size:.72rem;color:#888;flex-wrap:wrap}
+.calc-bar-legend{display:flex;gap:1rem;margin-top:.5rem;font-size:.72rem;color:var(--tone-888);flex-wrap:wrap}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:middle}
 .calc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.6rem}
-.calc-box{background:var(--wcard-bg);border:1px solid #2a2a30;border-radius:8px;padding:.8rem 1rem}
-.calc-box-title{font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem}
+.calc-box{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:8px;padding:.8rem 1rem}
+.calc-box-title{font-size:.7rem;color:var(--tone-666);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem}
 .calc-box-val{font-size:1.4rem;font-weight:500;color:var(--text-color)}
-.calc-box-sub{font-size:.75rem;color:#666;margin-top:.2rem}
+.calc-box-sub{font-size:.75rem;color:var(--tone-666);margin-top:.2rem}
 .calc-box.highlight{border-color:var(--accent);background:var(--accent-bg3)}
 .calc-box.highlight .calc-box-val{color:var(--accent)}
 .calc-box.green{border-color:#2a5535;background:#0d1a10}
 .calc-box.green .calc-box-val{color:#7aff9a}
 .calc-items-list{margin-top:1rem}
-.calc-items-title{font-size:.78rem;color:#888;margin-bottom:.5rem}
-.calc-item-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--wcard-bg);border:1px solid #2a2a30;margin-bottom:3px;font-size:.82rem}
-.calc-item-name{flex:1;color:#ccc}
+.calc-items-title{font-size:.78rem;color:var(--tone-888);margin-bottom:.5rem}
+.calc-item-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:var(--wcard-bg);border:1px solid var(--border-neutral);margin-bottom:3px;font-size:.82rem}
+.calc-item-name{flex:1;color:var(--tone-ccc)}
 .calc-item-cat{font-size:.68rem;padding:1px 5px;border-radius:3px}
 .calc-item-xp{color:var(--accent);font-weight:500;white-space:nowrap}
 .theme-picker{position:relative;display:inline-block;vertical-align:middle;margin-left:.9rem}
-.theme-btn{background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#ccc;padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+.theme-btn{background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-btn);color:var(--tone-ccc);padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
 .theme-btn:hover{border-color:var(--accent)}
-.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:var(--card-bg);border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;display:none;flex-direction:column;gap:2px}
+.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:var(--card-bg);border:1px solid var(--border-neutral);border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;display:none;flex-direction:column;gap:2px}
 .theme-menu.open{display:flex}
-.theme-opt{display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;background:none;border:none;text-align:left;color:#ccc;font-size:.8rem;font-family:inherit;width:100%}
-.theme-opt:hover{background:#222228}
-.theme-opt.on{background:#222228;color:#fff}
+.theme-opt{display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;background:none;border:none;text-align:left;color:var(--tone-ccc);font-size:.8rem;font-family:inherit;width:100%}
+.theme-opt:hover{background:rgba(var(--accent-rgb),.12)}
+.theme-opt.on{background:rgba(var(--accent-rgb),.18);color:var(--text-strong)}
 .theme-swatch{width:16px;height:16px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.2)}
-.theme-opt-sub{font-size:.68rem;color:#777;display:block}
+.theme-opt-sub{font-size:.68rem;color:var(--tone-777);display:block}
 /* Keyboard-navigation focus ring — only shows for keyboard users (Tab),
    not on mouse clicks, via :focus-visible. Covers native interactive
    elements plus the div-based pseudo-buttons (role="button") used for
@@ -326,15 +333,15 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 <body>
 <h1 class="intro-el" style="animation-delay:.02s">⚙ Warframe Mastery Checker<span class="theme-picker" id="theme-picker"></span></h1>
 <p class="sub intro-el" style="animation-delay:.09s">Arme și warframe-uri care nu au contribuit niciodată la mastery rank</p>
-<p class="intro-el" style="animation-delay:.12s;font-size:.7rem;color:#666;margin:-.4rem 0 .8rem">
-  📦 Catalog de iteme verificat pentru <strong style="color:#888">Update 42.0 (2026-03-25)</strong> ·
+<p class="intro-el" style="animation-delay:.12s;font-size:.7rem;color:var(--tone-666);margin:-.4rem 0 .8rem">
+  📦 Catalog de iteme verificat pentru <strong style="color:var(--tone-888)">Update 42.0 (2026-03-25)</strong> ·
   <a href="https://wiki.warframe.com/w/Mastery_Rank#Total_Mastery" target="_blank" rel="noopener" style="color:var(--accent)">verifică pe wiki ↗</a>
-  <span style="color:#555"> — nu e verificare automată; dacă a mai ieșit un update de Warframe, cere-mi să regenerez catalogul.</span>
+  <span style="color:var(--tone-555)"> — nu e verificare automată; dacă a mai ieșit un update de Warframe, cere-mi să regenerez catalogul.</span>
 </p>
 
 <div class="card intro-el" style="animation-delay:.16s;border-color:#2a3a20;background:#111610">
   <div style="font-size:.8rem;color:#8acd5a;font-weight:500;margin-bottom:.6rem">📋 Cum obții fișierul lastData.dat</div>
-  <ol style="font-size:.8rem;color:#aaa;padding-left:1.2rem;line-height:1.9">
+  <ol style="font-size:.8rem;color:var(--tone-aaa);padding-left:1.2rem;line-height:1.9">
     <li>Instalează <strong style="color:var(--text-color)">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:var(--accent)">alecaframe.com</a></li>
     <li>Pornește Warframe și lasă AlecaFrame să se sincronizeze (iconița din system tray)</li>
     <li>Deschide <strong style="color:var(--text-color)">File Explorer</strong> și navighează la: <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;color:var(--accent)">%localappdata%\AlecaFrame</code></li>
@@ -346,12 +353,12 @@ button:focus-visible, a:focus-visible, input:focus-visible,
   <div class="drop" id="drop">
     <div class="drop-icon">📂</div>
     <p class="drop-label">Trage <strong>lastData.dat</strong> aici sau <strong id="browse">alege fișierul</strong></p>
-    <p id="file-info" style="display:none;font-size:.72rem;color:#555;margin-top:.35rem"></p>
+    <p id="file-info" style="display:none;font-size:.72rem;color:var(--tone-555);margin-top:.35rem"></p>
     <input type="file" id="filein" accept=".dat">
   </div>
   <div id="reload-row" style="display:none;margin-top:.6rem;text-align:center">
     <button class="fb" id="reload-btn" style="font-size:.78rem">🔄 Reîncarcă același fișier</button>
-    <span id="loaded-filename" style="font-size:.75rem;color:#666;margin-left:.5rem"></span>
+    <span id="loaded-filename" style="font-size:.75rem;color:var(--tone-666);margin-left:.5rem"></span>
   </div>
   <div class="status" id="st"></div>
 </div>
@@ -413,9 +420,9 @@ button:focus-visible, a:focus-visible, input:focus-visible,
         <button class="fs" data-status="owned">🎒 În inventar</button>
         <button class="fs" data-status="craftable">🔨 Craftabile</button>
         <button class="fs" data-status="bp_only">📦 BP deținut</button>
-        <div style="width:1px;height:20px;background:#2a2a35;align-self:center;flex-shrink:0"></div>
+        <div style="width:1px;height:20px;background:var(--border-neutral);align-self:center;flex-shrink:0"></div>
         <button class="fb" id="prime-filter-btn">✨ Doar Prime</button>
-        <div style="width:1px;height:20px;background:#2a2a35;align-self:center;flex-shrink:0"></div>
+        <div style="width:1px;height:20px;background:var(--border-neutral);align-self:center;flex-shrink:0"></div>
         <select class="fb" id="sortSelect">
           <option value="default">↕ Status → Categorie</option>
           <option value="name">↕ Alfabetic</option>
@@ -433,7 +440,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 
       <!-- INGREDIENTS panel -->
       <div id="mastery-panel-ingredients" style="display:none">
-        <p style="font-size:.8rem;color:#888;margin-bottom:.75rem">
+        <p style="font-size:.8rem;color:var(--tone-888);margin-bottom:.75rem">
           Arme din inventarul tău care sunt necesare ca ingredient pentru craftarea altor arme. Verifică înainte să vinzi!
         </p>
         <div class="toolbar" style="margin-bottom:.6rem">
@@ -448,7 +455,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
   <!-- Materials tab -->
   <div class="tab-panel" id="tab-materials" style="display:none">
     <div class="card">
-      <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
+      <p style="font-size:.8rem;color:var(--tone-888);margin-bottom:1rem">
         Materiale raw necesare pentru a crafta toate itemele la care ai blueprint. Scăzând ce ai deja în inventar.
       </p>
       <div class="toolbar" style="margin-bottom:.9rem">
@@ -471,12 +478,12 @@ button:focus-visible, a:focus-visible, input:focus-visible,
       <div class="calc-header">
         <div class="calc-current" id="calc-current-display"></div>
         <div class="calc-target-row" style="flex-wrap:wrap;gap:.6rem;margin-top:.5rem;align-items:center">
-          <span style="font-size:.82rem;color:#aaa">XP actual:</span>
-          <input type="number" id="calc-xp-override" min="0" style="width:150px;background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--text-color);padding:.35rem .6rem;font-size:.9rem;text-align:center" title="Pre-completat din fișier. Pentru precizie maximă: ESC → Profile → hover pe bara de mastery">
-          <span style="font-size:.72rem;color:#555">| Target:</span>
-          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:var(--wcard-bg);border:1px solid #2a2a35;border-radius:6px;color:var(--accent);padding:.35rem .6rem;font-size:1rem;text-align:center">
+          <span style="font-size:.82rem;color:var(--tone-aaa)">XP actual:</span>
+          <input type="number" id="calc-xp-override" min="0" style="width:150px;background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:6px;color:var(--text-color);padding:.35rem .6rem;font-size:.9rem;text-align:center" title="Pre-completat din fișier. Pentru precizie maximă: ESC → Profile → hover pe bara de mastery">
+          <span style="font-size:.72rem;color:var(--tone-555)">| Target:</span>
+          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:6px;color:var(--accent);padding:.35rem .6rem;font-size:1rem;text-align:center">
           <button class="fb" id="calc-btn" style="background:#1a2010;border-color:#3a5020;color:#8acd5a">Calculează</button>
-          <span style="font-size:.7rem;color:#444">💡 XP exact: ESC → Profile → hover pe bara de mastery</span>
+          <span style="font-size:.7rem;color:var(--tone-444)">💡 XP exact: ESC → Profile → hover pe bara de mastery</span>
         </div>
       </div>
       <div id="calc-result" style="display:none">
@@ -496,7 +503,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
             <span><span class="dot" style="background:#4a8aee"></span>🎒 Inventar</span>
             <span><span class="dot" style="background:#4aaa60"></span>🔨 Craftabile</span>
             <span><span class="dot" style="background:#885520"></span>📦 BP deținut</span>
-            <span><span class="dot" style="background:#1a1a20;border:1px solid #333"></span>Fără acces</span>
+            <span><span class="dot" style="background:#1a1a20;border:1px solid var(--tone-333)"></span>Fără acces</span>
           </div>
         </div>
         <div class="calc-grid" id="calc-grid"></div>
@@ -521,7 +528,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 
       <!-- SETS panel -->
       <div id="sell-panel-sets">
-        <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
+        <p style="font-size:.8rem;color:var(--tone-888);margin-bottom:1rem">
           Seturi pe care le poți vinde în siguranță — ai toate blueprint-urile, itemul e deja masterat sau ai o copie separată în inventar, <strong style="color:var(--text-color)">și</strong> îți rămâne un set întreg în plus după ce claimezi/finalizezi ce ai deja în Foundry.
         </p>
         <div class="toolbar" style="margin-bottom:.8rem">
@@ -543,7 +550,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 
       <!-- MODS panel -->
       <div id="sell-panel-mods" style="display:none">
-        <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
+        <p style="font-size:.8rem;color:var(--tone-888);margin-bottom:1rem">
           Moduri cu mai mult de o copie la rank maxim — surplus-ul poate fi vândut sau folosit pentru a crăfta <strong style="color:var(--text-color)">Endo</strong>.
         </p>
         <div class="toolbar" style="margin-bottom:.8rem">
@@ -561,7 +568,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 
       <!-- ARCANES panel -->
       <div id="sell-panel-arcanes" style="display:none">
-        <p style="font-size:.8rem;color:#888;margin-bottom:1rem">
+        <p style="font-size:.8rem;color:var(--tone-888);margin-bottom:1rem">
           Arcane-uri cu mai mult de o copie la rank maxim — surplus-ul poate fi vândut pe warframe.market.
         </p>
         <div class="toolbar" style="margin-bottom:.8rem">
@@ -758,7 +765,7 @@ function showPopup(w, anchorEl){
 
   const comps = (w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName);
   if(comps.length===0){
-    body.innerHTML = '<div style="color:#666;font-size:.8rem">Nu există date despre componente.</div>';
+    body.innerHTML = '<div style="color:var(--tone-666);font-size:.8rem">Nu există date despre componente.</div>';
   } else {
     body.innerHTML = comps.map(c=>{
       const have = (miscItemsGlobal.get(c.uniqueName) || 0) + (ownedItemsGlobal.has(c.uniqueName) ? 1 : 0);
@@ -2228,6 +2235,26 @@ const FULL_THEMES = {
     bgBase:'#000000', cardBg:'#050805', wcardBg:'#030503', textColor:'#c8ffe0',
     fontFamily:"'Courier New',Consolas,Monaco,monospace",
   },
+  duviri: {
+    // The only LIGHT theme. Every accent shade here is hand-tuned to stay
+    // readable against a warm parchment background — this is NOT the dark
+    // palette with colors swapped, it's a separate design, because on a
+    // dark theme "lighter" variants are the brightest/most vivid (for
+    // contrast against near-black), while on a light theme the *darkest*,
+    // most saturated amber is what stays readable against pale surfaces.
+    // Same logic applies to the accent-bg tints: on dark themes they're
+    // near-black fills, here they're pale golden washes instead.
+    label:'Duviri (Pergament)', emoji:'📜', swatch:'#8a5818',
+    accent:'#8a5818', light:'#7a4c12', lighter:'#6a4010', mid:'#96662a', dim:'#a87c42',
+    border:'#c9a25c', border2:'#d4b378', bg:'#e8d8a8', bg2:'#f0dfa8', bg3:'#f5e6a0',
+    rgb:'138,88,24', lightRgb:'122,76,18', hue:32,
+    radiusLg:'16px', radiusBtn:'10px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
+    bgBase:'#ece4d0', cardBg:'#f8f3e6', wcardBg:'#f3ecd9', textColor:'#2b2820',
+    fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+    tones:{eee:'#221f18', e8:'#2b2820', ccc:'#3d3a2f', aaa:'#5f5a48', 999:'#706a56', 888:'#8a8570', 777:'#7d7863', 666:'#9a957f', 555:'#aba68f', 444:'#bcb7a0', 333:'#cdc9b3'},
+    borderNeutral:'#d8cead', panelDeep:'#e8dfc4',
+    panelGrad1:'#f5eeda', panelGrad2:'#ece2c8', textStrong:'#1a1710',
+  },
 };
 function applyAccentTheme(name){
   const t = FULL_THEMES[name] || FULL_THEMES.tenno;
@@ -2254,6 +2281,23 @@ function applyAccentTheme(name){
   root.setProperty('--wcard-bg', t.wcardBg || '#111116');
   root.setProperty('--text-color', t.textColor || '#e0e0e0');
   root.setProperty('--font-family', t.fontFamily || "-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif");
+  const tn = t.tones || {};
+  root.setProperty('--tone-eee', tn.eee || '#eee');
+  root.setProperty('--tone-e8', tn.e8 || '#e8e8e8');
+  root.setProperty('--tone-ccc', tn.ccc || '#ccc');
+  root.setProperty('--tone-aaa', tn.aaa || '#aaa');
+  root.setProperty('--tone-999', tn['999'] || '#999');
+  root.setProperty('--tone-888', tn['888'] || '#888');
+  root.setProperty('--tone-777', tn['777'] || '#777');
+  root.setProperty('--tone-666', tn['666'] || '#666');
+  root.setProperty('--tone-555', tn['555'] || '#555');
+  root.setProperty('--tone-444', tn['444'] || '#444');
+  root.setProperty('--tone-333', tn['333'] || '#333');
+  root.setProperty('--border-neutral', t.borderNeutral || '#2a2a30');
+  root.setProperty('--panel-deep', t.panelDeep || '#0f0f14');
+  root.setProperty('--panel-grad-1', t.panelGrad1 || '#1a1712');
+  root.setProperty('--panel-grad-2', t.panelGrad2 || '#100e0a');
+  root.setProperty('--text-strong', t.textStrong || '#fff');
   document.documentElement.setAttribute('data-theme', name);
   currentAccentHue = t.hue;
   applyMRBackgroundTheme(lastKnownMR);
@@ -2380,7 +2424,7 @@ function renderMRProgress(currentMR, totalXP, missingItems){
 
       <div class="mr-ranks">
         ${chips.map(({r,cls})=>`<span class="mr-rank-chip ${cls}" title="${mrXpRequired(r).toLocaleString()} XP">${mrName(r)}</span>`).join('')}
-        ${maxReachable < 35 ? '<span style="color:#333;font-size:.7rem">···</span>' : ''}
+        ${maxReachable < 35 ? '<span style="color:var(--tone-333);font-size:.7rem">···</span>' : ''}
       </div>
 
       <div class="mr-summary-line">
@@ -2928,35 +2972,35 @@ function renderBreakdownPanel(){
     const items = catItems[key]||[];
     const savedReal = realValues[key]||'';
     const max = maxPossible[key];
-    const pctLabel = max ? `<div style="font-size:.62rem;color:#777;margin:0 0 .3rem 1.4rem">${Math.min(100,Math.round((calc/max)*100))}% din maximul posibil (${max.toLocaleString()})</div>` : '';
+    const pctLabel = max ? `<div style="font-size:.62rem;color:var(--tone-777);margin:0 0 .3rem 1.4rem">${Math.min(100,Math.round((calc/max)*100))}% din maximul posibil (${max.toLocaleString()})</div>` : '';
     const groupHdr = group ? `<div style="display:flex;align-items:center;gap:.5rem;margin:${idx===0?'0':'.7rem'} 0 .4rem">
         <span style="font-size:.62rem;letter-spacing:.08em;color:var(--accent-dim);font-weight:700;white-space:nowrap">${group}</span>
         <span style="flex:1;height:1px;background:linear-gradient(90deg,var(--accent-bg),transparent)"></span>
       </div>` : '';
     return `${groupHdr}
       <div style="display:flex;align-items:center;gap:.4rem;padding:2px 0">
-        <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:#888;cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
+        <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:var(--tone-888);cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
         <span style="color:var(--accent);flex:1">${label}</span>
-        <span style="color:#e8e8e8;font-weight:600;width:5.5rem;text-align:right">${calc.toLocaleString()}</span>
-        <input class="bd-real" data-cat="${key}" type="text" inputmode="numeric" placeholder="real" value="${savedReal}" style="width:4.5rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:1px 4px;font-size:.7rem;text-align:right">
+        <span style="color:var(--tone-e8);font-weight:600;width:5.5rem;text-align:right">${calc.toLocaleString()}</span>
+        <input class="bd-real" data-cat="${key}" type="text" inputmode="numeric" placeholder="real" value="${savedReal}" style="width:4.5rem;background:var(--panel-deep);border:1px solid var(--tone-333);border-radius:4px;color:var(--tone-eee);padding:1px 4px;font-size:.7rem;text-align:right">
         <span class="bd-diff" data-cat="${key}" style="width:3.5rem;text-align:right;font-size:.7rem;font-weight:700"></span>
       </div>
       <div class="bd-bar-wrap" data-cat="${key}"><div class="bd-bar-fill" data-cat="${key}"></div></div>
       ${pctLabel}
-      <div class="bd-items" data-cat="${key}" style="display:none;margin:.2rem 0 .3rem 1.4rem;padding:.3rem .5rem;background:#0d0d11;border-radius:4px;max-height:180px;overflow-y:auto;font-size:.65rem;color:#999"></div>`;
+      <div class="bd-items" data-cat="${key}" style="display:none;margin:.2rem 0 .3rem 1.4rem;padding:.3rem .5rem;background:var(--panel-deep);border-radius:4px;max-height:180px;overflow-y:auto;font-size:.65rem;color:var(--tone-999)"></div>`;
   }).join('');
 
   panel.innerHTML = `
-    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid var(--accent-bg);border-radius:8px;padding:1rem;max-width:460px;font-size:.8rem">
+    <div style="background:linear-gradient(180deg,var(--panel-grad-1),var(--panel-grad-2));border:1px solid var(--accent-bg);border-radius:8px;padding:1rem;max-width:460px;font-size:.8rem">
       <div style="color:var(--accent-light);font-weight:700;font-size:.9rem;margin-bottom:.6rem;letter-spacing:.05em">MASTERY BREAKDOWN — calculat vs. real</div>
-      <div style="display:flex;gap:.4rem;font-size:.65rem;color:#666;margin-bottom:.4rem;padding-left:1.4rem">
+      <div style="display:flex;gap:.4rem;font-size:.65rem;color:var(--tone-666);margin-bottom:.4rem;padding-left:1.4rem">
         <span style="flex:1"></span><span style="width:5.5rem;text-align:right">calculat</span><span style="width:4.5rem;text-align:right">real</span><span style="width:3.5rem;text-align:right">diferență</span>
       </div>
       ${rowsHtml}
       <div style="border-top:1px solid var(--accent-bg);padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
-        <span style="color:var(--accent-light)">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
+        <span style="color:var(--accent-light)">Total calculat</span><span style="color:var(--text-strong)">${cats.total.toLocaleString()}</span>
       </div>
-      <div style="margin-top:.5rem;font-size:.68rem;color:#666">Bara arată progresul spre maximul posibil pentru fiecare categorie (sursă: WARFRAME Wiki). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
+      <div style="margin-top:.5rem;font-size:.68rem;color:var(--tone-666)">Bara arată progresul spre maximul posibil pentru fiecare categorie (sursă: WARFRAME Wiki). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
     </div>`;
   panel.style.display = '';
 
@@ -2980,7 +3024,7 @@ function renderBreakdownPanel(){
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shortItemName(it.t)}</span>
             <span style="flex-shrink:0">${it.credited.toLocaleString()}</span>
           </div>`
-        ).join('') || '<div style="color:#555">(gol)</div>';
+        ).join('') || '<div style="color:var(--tone-555)">(gol)</div>';
         itemsDiv.dataset.filled = '1';
       }
     });
@@ -3208,7 +3252,7 @@ function renderIngredients(){
   if(!grid) return;
   if(countEl) countEl.textContent = `${f.length} arme`;
   if(!f.length){
-    grid.innerHTML = '<p style="color:#555;font-size:.82rem;padding:.5rem">Nicio armă din inventar nu e necesară ca ingredient.</p>';
+    grid.innerHTML = '<p style="color:var(--tone-555);font-size:.82rem;padding:.5rem">Nicio armă din inventar nu e necesară ca ingredient.</p>';
     return;
   }
   grid.innerHTML = f.map(i => {
@@ -3339,7 +3383,7 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
     const rowClass = ok ? 'row-ok' : 'row-miss';
     const qtyClass = ok ? 'qty-ok' : 'qty-miss';
     const icon = ok ? '✓' : '✕';
-    const foundryNote = inFoundry > 0 ? ` <span style="color:#888;font-weight:400">(${inFoundry} în Foundry)</span>` : '';
+    const foundryNote = inFoundry > 0 ? ` <span style="color:var(--tone-888);font-weight:400">(${inFoundry} în Foundry)</span>` : '';
     return `<div class="comp-row ${rowClass}">
       <span class="comp-icon ${qtyClass}">${icon}</span>
       <span class="comp-name">${c.name}</span>
@@ -3348,7 +3392,7 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
   }).join('');
 
   const reserveNote = reserved
-    ? `<div style="font-size:.72rem;color:#888;margin-top:.5rem;padding-top:.5rem;border-top:1px solid #2a2a2a">
+    ? `<div style="font-size:.72rem;color:var(--tone-888);margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border-neutral)">
         ⚠ Un set e reținut pentru tine — e cel deja în Foundry (${w.sellReason}). Cele <strong style="color:var(--text-color)">x${w.setCount}</strong> afișate pe card sunt seturi <strong style="color:var(--text-color)">în plus</strong>, separate de ce ai deja în construcție.
       </div>`
     : '';
@@ -3458,7 +3502,7 @@ function renderMods() {
   document.getElementById('mods-countlbl').textContent = `${f.length} moduri`;
   const grid = document.getElementById('mods-grid');
   if(!f.length){
-    grid.innerHTML = '<p style="color:#555;font-size:.82rem;padding:.5rem">Niciun mod duplicat găsit.</p>';
+    grid.innerHTML = '<p style="color:var(--tone-555);font-size:.82rem;padding:.5rem">Niciun mod duplicat găsit.</p>';
     return;
   }
   grid.innerHTML = f.map(m => {
@@ -3561,16 +3605,16 @@ function renderArcanes() {
   });
   document.getElementById('arcanes-countlbl').textContent = `${f.length} arcane`;
   if(!f.length){
-    grid.innerHTML = '<p style="color:#555;font-size:.82rem;padding:.5rem">Niciun arcane duplicat găsit.</p>';
+    grid.innerHTML = '<p style="color:var(--tone-555);font-size:.82rem;padding:.5rem">Niciun arcane duplicat găsit.</p>';
     return;
   }
-  const rarityColor = {common:'#888',uncommon:'#4a8a4a',rare:'var(--accent)',legendary:'#c87840'};
+  const rarityColor = {common:'var(--tone-888)',uncommon:'#4a8a4a',rare:'var(--accent)',legendary:'#c87840'};
   grid.innerHTML = f.map(a => {
     const marketSlug = a.name.toLowerCase().replace(/ /g,'_');
     const marketUrl = `https://warframe.market/items/${marketSlug}`;
     return `
     <div class="mod-card">
-      <div class="mod-rarity" style="background:${rarityColor[a.rarity]||'#888'};width:4px;border-radius:2px;align-self:stretch;flex-shrink:0"></div>
+      <div class="mod-rarity" style="background:${rarityColor[a.rarity]||'var(--tone-888)'};width:4px;border-radius:2px;align-self:stretch;flex-shrink:0"></div>
       <div class="mod-info">
         <div class="mod-name">${a.name}</div>
         <div class="mod-sub">${a.arcaneType}${a.r0copies > 0 ? ' · ' + a.r0copies + ' R0' : ''}${a.remainderR0 > 0 ? ' · ' + a.remainderR0 + ' R0 rest' : ''}</div>
@@ -3596,7 +3640,7 @@ function renderSell() {
   const grid = document.getElementById('sell-grid');
   grid.innerHTML = '';
   if (f.length === 0) {
-    grid.innerHTML = '<div style="color:#555;font-size:.82rem;padding:.5rem 0">Niciun set eligibil.</div>';
+    grid.innerHTML = '<div style="color:var(--tone-555);font-size:.82rem;padding:.5rem 0">Niciun set eligibil.</div>';
     return;
   }
 
