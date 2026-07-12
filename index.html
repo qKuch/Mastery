@@ -1543,18 +1543,24 @@ async function process(file){
     const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category) && !EXCLUDED_BOGUS_ITEMS.has(w.uniqueName));
     // Sirius & Orion — released in Update 43.0 (2026-06-17), after this
     // catalog snapshot was built, confirmed real via wiki.warframe.com.
-    // Standard Warframe acquisition (main BP from the "Jade Shadows:
-    // Constellations" quest, then Neuroptics/Chassis/Systems from Uranus
-    // Proxima Railjack Skirmishes) but exact resource costs per component
-    // aren't available from public sources yet, so they're left unset
-    // rather than guessed — better to show "no cost data" than wrong
-    // numbers. Whitelisted in validateCatalogHealth's ghost-item check
-    // below for the same reason.
+    // Top-level components confirmed via a real wiki screenshot (main BP:
+    // 25,000cr + 1 Chassis + 1 Neuroptics + 1 Systems + 3 Orokin Cell, 3
+    // days). uniqueName paths follow DE's established WarframeRecipes naming
+    // convention (seen on every other frame, e.g. VOLTChassisComponent) but
+    // aren't independently verified against game files — if a path is
+    // slightly off, worst case a component just shows as "missing" by
+    // default, which is the correct starting assumption anyway.
     const SIRIUS_ORION_STUB = {
       name: 'Sirius & Orion',
       uniqueName: '/Lotus/Powersuits/Constellation/Constellation',
       category: 'Warframes',
-      components: [],
+      components: [
+        { name: 'Blueprint', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONBlueprint', itemCount: 1 },
+        { name: 'Chassis', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONChassisComponent', itemCount: 1 },
+        { name: 'Neuroptics', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONHelmetComponent', itemCount: 1 },
+        { name: 'Orokin Cell', uniqueName: '/Lotus/Types/Items/MiscItems/OrokinCell', itemCount: 3 },
+        { name: 'Systems', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONSystemsComponent', itemCount: 1 },
+      ],
       isModular: false,
       knownIncompleteData: true,
     };
