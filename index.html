@@ -298,6 +298,17 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .theme-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s ease,border-color .15s ease;padding:0}
 .theme-dot:hover{transform:scale(1.15)}
 .theme-dot.on{border-color:#fff}
+/* Keyboard-navigation focus ring — only shows for keyboard users (Tab),
+   not on mouse clicks, via :focus-visible. Covers native interactive
+   elements plus the div-based pseudo-buttons (role="button") used for
+   collapsible rows/headers. */
+button:focus-visible, a:focus-visible, input:focus-visible,
+[role="button"]:focus-visible, [tabindex]:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:4px;
+}
+.wcard:has(button:focus-visible){box-shadow:0 0 0 2px var(--accent)}
 </style>
 </head>
 <body>
@@ -306,7 +317,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 <p class="intro-el" style="animation-delay:.12s;font-size:.7rem;color:#666;margin:-.4rem 0 .8rem">
   📦 Catalog de iteme verificat pentru <strong style="color:#888">Update 42.0 (2026-03-25)</strong> ·
   <a href="https://wiki.warframe.com/w/Mastery_Rank#Total_Mastery" target="_blank" rel="noopener" style="color:var(--accent)">verifică pe wiki ↗</a>
-  <span style="color:#555"> — nu e verificare automată.</span>
+  <span style="color:#555"> — nu e verificare automată; dacă a mai ieșit un update de Warframe, cere-mi să regenerez catalogul.</span>
 </p>
 
 <div class="card intro-el" style="animation-delay:.16s;border-color:#2a3a20;background:#111610">
@@ -858,6 +869,8 @@ function renderSection(items, container, colKey){
 
   const hdr=document.createElement('div');
   hdr.className='section-hdr'+(isCollapsed?' collapsed':'');
+  hdr.tabIndex=0;
+  hdr.setAttribute('role','button');
   const label=GROUP_LABELS_CAT[colKey]||GROUP_LABELS_STATUS[colKey]||colKey;
   hdr.innerHTML=`<span class="section-arrow">▾</span><span class="section-title">${label}</span><span class="section-count">(${items.length})</span><span class="section-line"></span>`;
 
@@ -2043,7 +2056,7 @@ function renderMaterials(){
       }
 
       const hasComps = subCompsHtml !== '';
-      return `<div class="mat-detail-row ${hasComps?'expandable':''}" data-sub-id="${subCompId}" style="cursor:${hasComps?'pointer':'default'}">
+      return `<div class="mat-detail-row ${hasComps?'expandable':''}" data-sub-id="${subCompId}" style="cursor:${hasComps?'pointer':'default'}" ${hasComps?'tabindex="0" role="button"':''}>
         <span class="mat-detail-expand">${hasComps?'▶':''}</span>
         <span class="mat-detail-name">${itemName}</span>
         <span class="mat-detail-need">x${itemNeeded}</span>
@@ -2051,7 +2064,7 @@ function renderMaterials(){
       </div>${subCompsHtml}`;
     }).join('');
 
-    return `<div class="mat-row ${miss?'miss':'ok'}" data-mat-uid="${uid}" style="cursor:pointer">
+    return `<div class="mat-row ${miss?'miss':'ok'}" data-mat-uid="${uid}" style="cursor:pointer" tabindex="0" role="button">
       <div class="mat-indicator ${miss?'miss':'ok'}"></div>
       <div class="mat-info">
         <div class="mat-name">${m.name}</div>
@@ -2430,6 +2443,25 @@ function runCalculator(){
 // Popup close
 document.getElementById('info-popup').addEventListener('click', e=>{
   if(e.target.id==='popup-close') document.getElementById('info-popup').classList.remove('show');
+});
+
+// Keyboard support: Enter/Space activates any div-based pseudo-button
+// (.mat-row, expandable material rows, collapsible section headers — real
+// <button> elements already get this natively, no extra work needed there),
+// and Escape closes the info popup, matching standard modal/UI conventions.
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    const popup=document.getElementById('info-popup');
+    if(popup && popup.classList.contains('show')) popup.classList.remove('show');
+    return;
+  }
+  if(e.key==='Enter' || e.key===' '){
+    const el = e.target.closest('[role="button"]');
+    if(el){
+      e.preventDefault(); // stop Space from scrolling the page
+      el.click();
+    }
+  }
 });
 // Universal "pop" click feedback for every button in the app. Runs in the
 // capture phase so it still fires even for buttons (like .info-btn) whose
@@ -3491,6 +3523,8 @@ function renderSell() {
     const isCollapsed = sessionStorage.getItem(colKey) === '1';
     const hdr = document.createElement('div');
     hdr.className = 'section-hdr' + (isCollapsed ? ' collapsed' : '');
+    hdr.tabIndex = 0;
+    hdr.setAttribute('role', 'button');
     hdr.innerHTML = `<span class="section-arrow">▾</span><span class="section-title">${catLabels[cat]||cat}</span><span class="section-count">(${catItems.length})</span><span class="section-line"></span>`;
     const innerGrid = document.createElement('div');
     innerGrid.className = 'section-grid' + (isCollapsed ? ' hidden' : '');
