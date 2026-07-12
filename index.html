@@ -76,6 +76,15 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .empty-state-sub{font-size:.78rem;color:#666}
 .tab-fade-in{animation:tabFadeIn .22s ease}
 @keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
+.skel-card{height:58px;border-radius:6px;background:#16161a;border:1px solid #26262e;position:relative;overflow:hidden}
+.skel-bar{border-radius:4px;background:#16161a;position:relative;overflow:hidden}
+.skel-card::after,.skel-bar::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(200,168,75,.08),transparent);
+  animation:skelShimmer 1.6s ease-in-out infinite;
+}
+@keyframes skelShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 @keyframes statusPulse{
   0%{box-shadow:0 0 0 1px rgba(90,214,132,.9),0 0 22px rgba(90,214,132,.55)}
   70%{box-shadow:0 0 0 1px rgba(90,214,132,.35),0 0 10px rgba(90,214,132,.2)}
@@ -307,6 +316,15 @@ select.fb:focus{outline:none;border-color:#c8a84b}
     <span id="loaded-filename" style="font-size:.75rem;color:#666;margin-left:.5rem"></span>
   </div>
   <div class="status" id="st"></div>
+</div>
+
+<div id="skeleton-loading" style="display:none;margin-top:1rem">
+  <div class="skel-bar" style="width:40%;height:1.1rem;margin-bottom:1rem"></div>
+  <div class="skel-grid">
+    <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+    <div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div>
+    <div class="skel-card"></div><div class="skel-card"></div>
+  </div>
 </div>
 
 <div id="results">
@@ -1348,6 +1366,8 @@ function computeCategoryMaxPossible(){
 async function process(file){
   await _subRecipesReady;
   if(!file)return;
+  document.getElementById('results').style.display='none';
+  document.getElementById('skeleton-loading').style.display='';
   st(`Se procesează ${file.name}...`,'s-info');
   try{
     const buf=await file.arrayBuffer();
@@ -1771,11 +1791,13 @@ async function process(file){
       `<div class="sbox" style="border-color:#4a4020"><div class="snum" style="color:#ffcc55">${bpCount}</div><div class="slbl">BP deținut</div></div>`+
       Object.entries(cats).map(([k,v])=>`<div class="sbox"><div class="snum">${v}</div><div class="slbl">${labels[k]}</div></div>`).join('');
 
+    document.getElementById('skeleton-loading').style.display='none';
     document.getElementById('results').style.display='block';
     st(`✓ Gata! ${notMastered.length} iteme fără mastery — ${claimCount} de luat din Foundry${craftingCount?`, ${craftingCount} în craftare`:''}${craftCount?`, ${craftCount} craftabile`:''}${bpCount?`, ${bpCount} cu BP`:'.'}.`,'s-ok');
     render();
   }catch(err){
     console.error(err);
+    document.getElementById('skeleton-loading').style.display='none';
     st('Eroare: '+err.message,'s-err');
   }
 }
@@ -2630,19 +2652,19 @@ drop.ondrop=async e=>{
 };
 
 const BREAKDOWN_CATEGORIES = [
-  {key:'warframes', label:'Warframes'},
+  {key:'warframes', label:'Warframes', group:'ITEME'},
   {key:'primary', label:'Primary Weapons'},
   {key:'secondary', label:'Secondary Weapons'},
   {key:'melee', label:'Melee Weapons'},
   {key:'kitguns', label:'Kitguns'},
-  {key:'missions', label:'Missions', divider:true},
+  {key:'missions', label:'Missions', divider:true, group:'MISIUNI & INTRINSICS'},
   {key:'steelPath', label:'The Steel Path Missions'},
   {key:'railjackIntrinsics', label:'Railjack Intrinsics'},
   {key:'drifterIntrinsics', label:'Drifter Intrinsics'},
-  {key:'sentinels', label:'Sentinels', divider:true},
+  {key:'sentinels', label:'Sentinels', divider:true, group:'SENTINELE & COMPANIONI'},
   {key:'sentinelWeapons', label:'Sentinel Weapons'},
   {key:'companions', label:'Companions'},
-  {key:'archwing', label:'Archwing', divider:true},
+  {key:'archwing', label:'Archwing', divider:true, group:'ARCHWING & ALTELE'},
   {key:'archgun', label:'Archgun'},
   {key:'archmelee', label:'Archmelee'},
   {key:'amps', label:'Amps'},
@@ -2701,13 +2723,17 @@ function renderBreakdownPanel(){
   const maxPossible = computeCategoryMaxPossible() || {};
   const realValues = loadBreakdownRealValues();
 
-  const rowsHtml = BREAKDOWN_CATEGORIES.map(({key,label,divider})=>{
+  const rowsHtml = BREAKDOWN_CATEGORIES.map(({key,label,divider,group},idx)=>{
     const calc = cats[key]||0;
     const items = catItems[key]||[];
     const savedReal = realValues[key]||'';
     const max = maxPossible[key];
     const pctLabel = max ? `<div style="font-size:.62rem;color:#777;margin:0 0 .3rem 1.4rem">${Math.min(100,Math.round((calc/max)*100))}% din maximul posibil (${max.toLocaleString()})</div>` : '';
-    return `${divider?'<div style="height:.5rem"></div>':''}
+    const groupHdr = group ? `<div style="display:flex;align-items:center;gap:.5rem;margin:${idx===0?'0':'.7rem'} 0 .4rem">
+        <span style="font-size:.62rem;letter-spacing:.08em;color:#8a7540;font-weight:700;white-space:nowrap">${group}</span>
+        <span style="flex:1;height:1px;background:linear-gradient(90deg,#3a3020,transparent)"></span>
+      </div>` : '';
+    return `${groupHdr}
       <div style="display:flex;align-items:center;gap:.4rem;padding:2px 0">
         <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:#888;cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
         <span style="color:#c8a84b;flex:1">${label}</span>
