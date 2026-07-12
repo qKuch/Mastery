@@ -41,8 +41,6 @@
   --cat-other-bg:#1a1a22;
 }
 body{font-family:var(--font-family);background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) var(--bg-base);color:var(--text-color);min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
-@keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
-html[data-theme="infested"] body{animation:infestedBreathe 6s ease-in-out infinite}
 h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;position:relative;z-index:30}
 .sub{font-size:.8rem;color:var(--tone-555);margin-bottom:1.5rem}
 .card{background:var(--card-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
@@ -333,6 +331,10 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .theme-opt.on{background:rgba(var(--accent-rgb),.18);color:var(--text-strong)}
 .theme-swatch{width:16px;height:16px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.2)}
 .theme-opt-sub{font-size:.68rem;color:var(--tone-777);display:block}
+.tenno-color-row{display:none;align-items:center;gap:.35rem;margin-left:.6rem;vertical-align:middle}
+.tenno-color-dot{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s ease,border-color .15s ease;padding:0}
+.tenno-color-dot:hover{transform:scale(1.15)}
+.tenno-color-dot.on{border-color:var(--text-color)}
 /* Keyboard-navigation focus ring — only shows for keyboard users (Tab),
    not on mouse clicks, via :focus-visible. Covers native interactive
    elements plus the div-based pseudo-buttons (role="button") used for
@@ -2205,41 +2207,13 @@ function applyMRBackgroundTheme(mr){
 // rather than just a different highlight color.
 const FULL_THEMES = {
   tenno: {
-    label:'Tenno (Auriu)', emoji:'⚙', swatch:'#c8a84b',
+    label:'Tenno', emoji:'⚙', swatch:'#c8a84b',
     accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540',
     border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600',
     rgb:'200,168,75', lightRgb:'240,208,128', hue:42,
-    radiusLg:'10px', radiusBtn:'6px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
-  },
-  corpus: {
-    label:'Corpus (Cyan)', emoji:'💠', swatch:'#4bc8c0',
-    accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86',
-    border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18',
-    rgb:'75,200,192', lightRgb:'128,240,230', hue:176,
-    radiusLg:'3px', radiusBtn:'3px', borderW:'1px', letterSpacing:'.02em',
-    bgPattern:'repeating-linear-gradient(0deg,rgba(75,200,192,.03) 0px,rgba(75,200,192,.03) 1px,transparent 1px,transparent 42px),repeating-linear-gradient(90deg,rgba(75,200,192,.03) 0px,rgba(75,200,192,.03) 1px,transparent 1px,transparent 42px)',
-  },
-  grineer: {
-    label:'Grineer (Roșu)', emoji:'⚒', swatch:'#c85a5a',
-    accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540',
-    border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800',
-    rgb:'200,90,90', lightRgb:'240,157,128', hue:0,
-    radiusLg:'2px', radiusBtn:'2px', borderW:'2px', letterSpacing:'normal', bgPattern:'none',
-  },
-  orokin: {
-    label:'Orokin (Mov)', emoji:'✦', swatch:'#a85ac8',
-    accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a',
-    border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a',
-    rgb:'168,90,200', lightRgb:'208,128,240', hue:282,
-    radiusLg:'14px', radiusBtn:'10px', borderW:'1px', letterSpacing:'.03em',
-    bgPattern:'radial-gradient(ellipse 700px 500px at 50% 100%,rgba(168,90,200,.06),transparent 70%)',
-  },
-  infested: {
-    label:'Infested (Verde)', emoji:'🦠', swatch:'#5ac87a',
-    accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55',
-    border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08',
-    rgb:'90,200,122', lightRgb:'128,240,160', hue:138,
-    radiusLg:'18px', radiusBtn:'14px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
+    // Rounder shape (was Orokin's) — the default look now, regardless of
+    // which accent color is picked within Tenno.
+    radiusLg:'14px', radiusBtn:'10px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
   },
   zariman: {
     label:'Zariman (Terminal)', emoji:'📟', swatch:'#4dff9a',
@@ -2288,8 +2262,23 @@ const FULL_THEMES = {
     catOtherBg:'#e8dfc4',
   },
 };
+// Accent-color sub-picker, only meaningful while the Tenno theme is active.
+// These are exactly the color families that used to be their own separate
+// full themes (Corpus/Grineer/Orokin/Infested) — now just recolors of Tenno,
+// swapping only the --accent-* family, not the shape/font/background.
+const TENNO_ACCENT_COLORS = {
+  gold:   {label:'Auriu',  swatch:'#c8a84b', accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540', border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600', rgb:'200,168,75', lightRgb:'240,208,128', hue:42},
+  cyan:   {label:'Cyan',   swatch:'#4bc8c0', accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86', border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18', rgb:'75,200,192', lightRgb:'128,240,230', hue:176},
+  red:    {label:'Roșu',   swatch:'#c85a5a', accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540', border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800', rgb:'200,90,90',  lightRgb:'240,157,128', hue:0},
+  purple: {label:'Mov',    swatch:'#a85ac8', accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a', border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a', rgb:'168,90,200', lightRgb:'208,128,240', hue:282},
+  green:  {label:'Verde',  swatch:'#5ac87a', accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55', border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08', rgb:'90,200,122', lightRgb:'128,240,160', hue:138},
+};
+let tennoAccentColor = 'gold';
 function applyAccentTheme(name){
-  const t = FULL_THEMES[name] || FULL_THEMES.tenno;
+  const t = { ...(FULL_THEMES[name] || FULL_THEMES.tenno) };
+  if(name==='tenno'){
+    Object.assign(t, TENNO_ACCENT_COLORS[tennoAccentColor] || TENNO_ACCENT_COLORS.gold);
+  }
   const root = document.documentElement.style;
   root.setProperty('--accent', t.accent);
   root.setProperty('--accent-light', t.light);
@@ -2376,8 +2365,21 @@ function applyAccentTheme(name){
   applyMRBackgroundTheme(lastKnownMR);
   document.querySelectorAll('.theme-opt').forEach(d=>d.classList.toggle('on', d.dataset.theme===name));
   const btnLabel = document.getElementById('theme-btn-label');
-  if(btnLabel) btnLabel.textContent = `${t.emoji} ${t.label}`;
+  if(btnLabel){
+    const baseLabel = FULL_THEMES[name]?.label || t.label;
+    btnLabel.textContent = name==='tenno'
+      ? `${t.emoji} ${baseLabel} · ${TENNO_ACCENT_COLORS[tennoAccentColor]?.label || ''}`
+      : `${t.emoji} ${baseLabel}`;
+  }
+  const colorRow = document.getElementById('tenno-color-row');
+  if(colorRow) colorRow.style.display = name==='tenno' ? 'flex' : 'none';
   try { localStorage.setItem('wf_accent_theme', name); } catch(e){}
+}
+function applyTennoColor(colorKey){
+  tennoAccentColor = TENNO_ACCENT_COLORS[colorKey] ? colorKey : 'gold';
+  document.querySelectorAll('.tenno-color-dot').forEach(d=>d.classList.toggle('on', d.dataset.color===tennoAccentColor));
+  try { localStorage.setItem('wf_tenno_color', tennoAccentColor); } catch(e){}
+  if(document.documentElement.getAttribute('data-theme')==='tenno') applyAccentTheme('tenno');
 }
 function initThemePicker(){
   const picker = document.getElementById('theme-picker');
@@ -2409,13 +2411,39 @@ function initThemePicker(){
   document.addEventListener('click', ()=>menu.classList.remove('open'));
   picker.appendChild(btn);
   picker.appendChild(menu);
+
+  // Color sub-picker, visible only while Tenno is the active theme.
+  const colorRow = document.createElement('span');
+  colorRow.className = 'tenno-color-row';
+  colorRow.id = 'tenno-color-row';
+  Object.entries(TENNO_ACCENT_COLORS).forEach(([key,c])=>{
+    const dot = document.createElement('button');
+    dot.className = 'tenno-color-dot';
+    dot.type = 'button';
+    dot.dataset.color = key;
+    dot.title = c.label;
+    dot.style.background = c.swatch;
+    dot.addEventListener('click', (e)=>{ e.stopPropagation(); applyTennoColor(key); });
+    colorRow.appendChild(dot);
+  });
+  picker.appendChild(colorRow);
+
   let saved = 'tenno';
   try { saved = localStorage.getItem('wf_accent_theme') || 'tenno'; } catch(e){}
-  // Migrate old color-only keys (from before full themes existed) to their
-  // closest faction equivalent, so existing choices aren't silently reset.
-  const LEGACY_MAP = {gold:'tenno', cyan:'corpus', red:'grineer', purple:'orokin', green:'infested'};
-  if(LEGACY_MAP[saved]) saved = LEGACY_MAP[saved];
+  // Migrate old keys from before this restructuring: standalone color names
+  // and the four retired full themes (Corpus/Grineer/Orokin/Infested) all
+  // become "Tenno + that accent color" now, so nobody's choice just vanishes.
+  const LEGACY_COLOR_MAP = {gold:'gold', cyan:'cyan', red:'red', purple:'purple', green:'green',
+    corpus:'cyan', grineer:'red', orokin:'purple', infested:'green'};
+  if(LEGACY_COLOR_MAP[saved]){
+    tennoAccentColor = LEGACY_COLOR_MAP[saved];
+    saved = 'tenno';
+  }
   if(!FULL_THEMES[saved]) saved = 'tenno';
+  let savedColor = tennoAccentColor;
+  try { savedColor = localStorage.getItem('wf_tenno_color') || tennoAccentColor; } catch(e){}
+  tennoAccentColor = TENNO_ACCENT_COLORS[savedColor] ? savedColor : 'gold';
+  document.querySelectorAll('.tenno-color-dot').forEach(d=>d.classList.toggle('on', d.dataset.color===tennoAccentColor));
   applyAccentTheme(saved);
 }
 
