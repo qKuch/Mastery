@@ -6,30 +6,36 @@
 <title>Warframe Mastery Checker</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--mr-glow:rgba(90,140,255,.12)}
+:root{
+  --mr-glow:rgba(90,140,255,.12);
+  --accent:#c8a84b; --accent-light:#f0d080; --accent-lighter:#ffcc55;
+  --accent-mid:#e0b355; --accent-dim:#8a7540; --accent-border:#554400;
+  --accent-border2:#4a4020; --accent-bg:#3a3020; --accent-bg2:#2a2010; --accent-bg3:#1a1600;
+  --accent-rgb:200,168,75; --accent-light-rgb:240,208,128;
+}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease}
-h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
+h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem}
 .sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
 .card{background:#18181c;border:1px solid #2a2a30;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
 .drop{border:2px dashed #3a3a45;border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
-.drop:hover,.drop.over{border-color:#c8a84b;background:#1a1a10}
+.drop:hover,.drop.over{border-color:var(--accent);background:#1a1a10}
 .drop input{display:none}
 .drop-icon{font-size:2rem;margin-bottom:.5rem}
 .drop-label{font-size:.9rem;color:#aaa}
-.drop-label strong{color:#c8a84b;cursor:pointer}
+.drop-label strong{color:var(--accent);cursor:pointer}
 .status{font-size:.82rem;padding:.5rem .9rem;border-radius:6px;margin-top:.75rem;display:none}
 .s-info{background:#1a2030;color:#7aadff;border:1px solid #2a3a55;display:block}
 .s-err{background:#2a1010;color:#ff7a7a;border:1px solid #552a2a;display:block}
 .s-ok{background:#0f2018;color:#7aff9a;border:1px solid #1a5030;display:block}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.9rem}
 .toolbar input[type=text]{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#e0e0e0;padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
-.toolbar input[type=text]:focus{outline:none;border-color:#c8a84b}
+.toolbar input[type=text]:focus{outline:none;border-color:var(--accent)}
 .fb{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
-.fb:hover{border-color:#c8a84b;color:#c8a84b}
-.fb.on{background:#2a2010;border-color:#c8a84b;color:#c8a84b}
+.fb:hover{border-color:var(--accent);color:var(--accent)}
+.fb.on{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent)}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease}
 #prime-filter-btn.pf-normal{background:#0d1e30;border-color:#2a5f90;color:#7ac8ff}
-#prime-filter-btn.pf-prime{background:#2a2010;border-color:#c8a84b;color:#f0d080;text-shadow:0 0 8px rgba(240,208,128,.35)}
+#prime-filter-btn.pf-prime{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent-light);text-shadow:0 0 8px rgba(var(--accent-light-rgb),.35)}
 .pf-pop{animation:pfPop .38s cubic-bezier(.34,1.56,.64,1)}
 .bd-bar-wrap{height:4px;border-radius:2px;background:#1c1c22;margin:0 0 .1rem 1.4rem;overflow:hidden;opacity:0;transition:opacity .25s ease}
 .bd-bar-wrap.show{opacity:1}
@@ -45,16 +51,16 @@ h1{font-size:1.4rem;font-weight:500;color:#c8a84b;margin-bottom:.2rem}
 .fc{background:#0f2010;border:1px solid #1a4020;border-radius:6px;color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fc:hover,.fc.on{background:#152a18;border-color:#4aaa60;color:#afffbf}
 .fs{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
-.fs:hover{border-color:#c8a84b;color:#c8a84b}
-.fs.on[data-status="claimable"]{background:#2a2000;border-color:#c8a84b;color:#c8a84b}
+.fs:hover{border-color:var(--accent);color:var(--accent)}
+.fs.on[data-status="claimable"]{background:#2a2000;border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="owned"]{background:#0d1e30;border-color:#1a3a60;color:#7aaeff}
 .fs.on[data-status="craftable"]{background:#1a4020;border-color:#2a6030;color:#7aff9a}
-.fs.on[data-status="bp_only"]{background:#2a2010;border-color:#554020;color:#ffcc55}
+.fs.on[data-status="bp_only"]{background:var(--accent-bg2);border-color:#554020;color:var(--accent-lighter)}
 select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center}
-select.fb:focus{outline:none;border-color:#c8a84b}
+select.fb:focus{outline:none;border-color:var(--accent)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:1rem}
 .sbox{background:#111116;border:1px solid #2a2a35;border-radius:8px;padding:.65rem .9rem;text-align:center}
-.snum{font-size:1.5rem;font-weight:500;color:#c8a84b}
+.snum{font-size:1.5rem;font-weight:500;color:var(--accent)}
 .slbl{font-size:.7rem;color:#666;margin-top:2px}
 .grid{max-height:calc(100vh - 420px);min-height:300px;overflow-y:auto;padding-right:4px;padding-top:6px;margin-top:-6px}
 .grid.flat{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
@@ -63,12 +69,12 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .grid::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:3px}
 .wcard{background:#111116;border:1px solid #2a2a30;border-radius:6px;padding:.55rem .75rem;transition:transform .15s ease,box-shadow .15s ease}
 .wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
-.wcard.claimable{border-color:#c8a84b;background:#1a1600}
+.wcard.claimable{border-color:var(--accent);background:var(--accent-bg3)}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
 .wcard.craftable{border-color:#2a5535;background:#0d1a10}
 .wcard.partial{border-color:#3a3010;background:#111008}
-.wcard.prime-item{box-shadow:0 0 0 1px rgba(200,168,75,.55),inset 0 0 14px rgba(200,168,75,.06);position:relative}
-.wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(200,168,75,.7),inset 0 0 14px rgba(200,168,75,.08),0 4px 12px rgba(0,0,0,.35)}
+.wcard.prime-item{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.55),inset 0 0 14px rgba(var(--accent-rgb),.06);position:relative}
+.wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.7),inset 0 0 14px rgba(var(--accent-rgb),.08),0 4px 12px rgba(0,0,0,.35)}
 .wcard.status-improved{animation:statusPulse 2s ease-out 1}
 .empty-state{grid-column:1/-1;text-align:center;padding:2.5rem 1rem;color:#777}
 .empty-state-icon{font-size:2.2rem;margin-bottom:.6rem}
@@ -81,7 +87,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .skel-bar{border-radius:4px;background:#16161a;position:relative;overflow:hidden}
 .skel-card::after,.skel-bar::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(200,168,75,.08),transparent);
+  background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),.08),transparent);
   animation:skelShimmer 1.6s ease-in-out infinite;
 }
 @keyframes skelShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
@@ -98,18 +104,18 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .wname{font-size:.88rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcard-footer{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:4px;flex-wrap:wrap}
 .craft-tag{font-size:.65rem;padding:2px 6px;border-radius:3px;white-space:nowrap;font-weight:500}
-.tag-claim{background:#2a2000;color:#c8a84b;border:1px solid #554400}
+.tag-claim{background:#2a2000;color:var(--accent);border:1px solid var(--accent-border)}
 .tag-owned{background:#0d1e30;color:#7aaeff;border:1px solid #1a3a60}
 .tag-craft{background:#1a4020;color:#7aff9a;border:1px solid #2a6030}
-.tag-bp{background:#2a2010;color:#ffcc55;border:1px solid #554020}
+.tag-bp{background:var(--accent-bg2);color:var(--accent-lighter);border:1px solid #554020}
 .wiki-btn{font-size:.68rem;padding:2px 7px;border-radius:3px;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s;margin-left:auto}
-.wiki-btn:hover{background:#252540;border-color:#c8a84b;color:#c8a84b}
+.wiki-btn:hover{background:#252540;border-color:var(--accent);color:var(--accent)}
 .info-btn{font-size:.68rem;width:18px;height:18px;border-radius:50%;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-style:normal;line-height:1}
-.info-btn:hover{border-color:#c8a84b;color:#c8a84b;background:#252530}
+.info-btn:hover{border-color:var(--accent);color:var(--accent);background:#252530}
 /* Popup */
 #info-popup{display:none;position:fixed;z-index:1000;background:#1a1a20;border:1px solid #3a3a50;border-radius:10px;padding:1rem 1.1rem;min-width:240px;max-width:320px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.6)}
 #info-popup.show{display:block}
-#info-popup h3{font-size:.9rem;color:#c8a84b;margin-bottom:.7rem;font-weight:500}
+#info-popup h3{font-size:.9rem;color:var(--accent);margin-bottom:.7rem;font-weight:500}
 .comp-row{display:flex;align-items:center;gap:8px;padding:5px 7px;border-radius:5px;margin-bottom:3px;font-size:.8rem}
 .comp-row.row-ok{background:#0d1f10}
 .comp-row.row-bp{background:#1a1800}
@@ -118,14 +124,14 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .comp-name{flex:1;color:#ccc}
 .comp-qty{white-space:nowrap;font-size:.75rem;font-weight:500}
 .qty-ok{color:#7aff9a}
-.qty-bp{color:#ffcc55}
+.qty-bp{color:var(--accent-lighter)}
 .qty-miss{color:#ff7a7a}
 .comp-status{font-size:.65rem;padding:1px 5px;border-radius:3px;white-space:nowrap;margin-left:2px}
 .status-ok{background:#1a4020;color:#7aff9a;border:1px solid #2a6030}
-.status-bp{background:#2a2000;color:#ffcc55;border:1px solid #554400}
+.status-bp{background:#2a2000;color:var(--accent-lighter);border:1px solid var(--accent-border)}
 .status-miss{background:#2a0d0d;color:#ff7a7a;border:1px solid #551515}
 #info-popup .close-btn{position:absolute;top:8px;right:10px;background:none;border:none;color:#666;cursor:pointer;font-size:1rem;line-height:1}
-#info-popup .close-btn:hover{color:#c8a84b}
+#info-popup .close-btn:hover{color:var(--accent)}
 .badge{display:inline-block;font-size:.68rem;padding:1px 6px;border-radius:3px;font-weight:500}
 .badge.bp{background:#2a1810;border:1px solid #5a3520;color:#e8955a}
 .badge.bs{background:#0d1e30;border:1px solid #1a3a60;color:#6ab4ff}
@@ -133,7 +139,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .badge.ba{background:#1e1030;border:1px solid #3a1a60;color:#b28aff}
 .badge.bw{background:#0d2a28;border:1px solid #1a5550;color:#5adbc8}
 .badge.bc{background:#122a10;border:1px solid #2a5520;color:#8ad65a}
-.badge.bk{background:#2a2010;border:1px solid #554020;color:#e0b355}
+.badge.bk{background:var(--accent-bg2);border:1px solid #554020;color:var(--accent-mid)}
 .badge.bo{background:#1a1a22;border:1px solid #33333f;color:#999}
 .bp{background:#1a2535;color:#7aadff}
 .bs{background:#1a2010;color:#8acd5a}
@@ -142,12 +148,12 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .bw{background:#2a1535;color:#dd88ff}
 .bo{background:#1e1e1e;color:#888}
 .copybtn{background:#1a2010;border:1px solid #3a5020;color:#8acd5a;border-radius:6px;padding:.45rem 1rem;font-size:.82rem;cursor:pointer;transition:all .15s}
-.copybtn:hover{border-color:#c8a84b;color:#c8a84b}
+.copybtn:hover{border-color:var(--accent);color:var(--accent)}
 .count-label{font-size:.75rem;color:#555;margin-bottom:.6rem}
 /* Grouped sections */
 .section-group{margin-bottom:.6rem}
 .section-hdr{display:flex;align-items:center;gap:.5rem;cursor:pointer;user-select:none;padding:.3rem 0;margin-bottom:.4rem}
-.section-hdr:hover .section-title{color:#c8a84b}
+.section-hdr:hover .section-title{color:var(--accent)}
 .section-arrow{font-size:.6rem;color:#555;transition:transform .2s;flex-shrink:0}
 .section-hdr.collapsed .section-arrow{transform:rotate(-90deg)}
 .section-title{font-size:.76rem;color:#888;font-weight:500;transition:color .15s}
@@ -157,11 +163,11 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .section-grid.hidden{display:none}
 /* Group toggle toolbar item */
 select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .5rem center}
-select.fb:focus{outline:none;border-color:#c8a84b}
+select.fb:focus{outline:none;border-color:var(--accent)}
 #results{display:none}
 .tabs{display:flex;gap:.5rem;margin-bottom:.0rem}
 .tab{background:#18181c;border:1px solid #2a2a35;border-radius:8px 8px 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
-.tab.on{background:#111116;border-color:#c8a84b;color:#c8a84b}
+.tab.on{background:#111116;border-color:var(--accent);color:var(--accent)}
 .tab-panel .card{border-radius:0 8px 8px 8px}
 .mat-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;margin-bottom:5px;transition:background .1s}
 .mat-row.miss{background:#180d0d;border:1px solid #3a1a1a}
@@ -170,7 +176,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .mat-detail-row{display:flex;align-items:center;gap:.6rem;padding:.25rem 0;border-bottom:1px solid #1a1010}
 .mat-detail-row:last-child{border-bottom:none}
 .mat-detail-name{flex:1;font-size:.78rem;color:#ccc}
-.mat-detail-need{font-size:.75rem;color:#c8a84b;font-weight:600;white-space:nowrap}
+.mat-detail-need{font-size:.75rem;color:var(--accent);font-weight:600;white-space:nowrap}
 .mat-detail-status{font-size:.68rem;color:#888;white-space:nowrap}
 .mat-detail-expand{width:12px;font-size:.6rem;color:#555;flex-shrink:0;transition:transform .15s}
 .mat-detail-row.expandable:hover{background:#1a0f0f}
@@ -195,30 +201,30 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .mat-qty-num.ok{color:#44cc70}
 .mat-qty-label{font-size:.7rem;color:#666;margin-top:1px}
 .mat-wiki{font-size:.68rem;padding:3px 8px;border-radius:4px;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;text-decoration:none;white-space:nowrap;transition:all .15s;flex-shrink:0}
-.mat-wiki:hover{background:#252540;border-color:#c8a84b;color:#c8a84b}
+.mat-wiki:hover{background:#252540;border-color:var(--accent);color:var(--accent)}
 .mat-group{margin-bottom:1.2rem}
-.mat-group-header{display:flex;align-items:center;gap:.7rem;padding:.4rem .6rem;margin-bottom:.3rem;background:#111;border-left:3px solid #c8a84b;border-radius:0 4px 4px 0}
-.mat-group-name{font-weight:600;font-size:.82rem;color:#c8a84b;letter-spacing:.04em}
+.mat-group-header{display:flex;align-items:center;gap:.7rem;padding:.4rem .6rem;margin-bottom:.3rem;background:#111;border-left:3px solid var(--accent);border-radius:0 4px 4px 0}
+.mat-group-name{font-weight:600;font-size:.82rem;color:var(--accent);letter-spacing:.04em}
 .mat-group-count{font-size:.72rem;color:#888}
 .miss-badge{color:#e05555;font-weight:600}
 /* Sell tab */
 .sell-grid{display:block;max-height:calc(100vh - 380px);min-height:300px;overflow-y:auto;padding-right:4px}
 .sell-subtabs{display:flex;gap:.4rem;margin-bottom:1rem;border-bottom:1px solid #1a2a1a;padding-bottom:.6rem}
 .sell-subtab,.mastery-subtab{padding:.35rem .9rem;border-radius:6px 6px 0 0;border:1px solid #2a3a2a;background:#0a120a;color:#888;cursor:pointer;font-size:.8rem;transition:all .15s}
-.sell-subtab.on,.mastery-subtab.on{background:#1a2a1a;border-color:#3a5a3a;color:#c8a84b;font-weight:600}
+.sell-subtab.on,.mastery-subtab.on{background:#1a2a1a;border-color:#3a5a3a;color:var(--accent);font-weight:600}
 .sell-subtab:hover:not(.on),.mastery-subtab:hover:not(.on){background:#111a11;color:#aaa}
 .mod-card{background:#0d1520;border:1px solid #1a3040;border-radius:6px;padding:.5rem .75rem;display:flex;align-items:center;gap:.75rem;min-height:52px}
 .mod-card:hover{background:#111a25}
 .mod-rarity{width:4px;border-radius:2px;align-self:stretch;flex-shrink:0}
 .mod-rarity.common{background:#888}
 .mod-rarity.uncommon{background:#4a8a4a}
-.mod-rarity.rare{background:#c8a84b}
+.mod-rarity.rare{background:var(--accent)}
 .mod-rarity.primed{background:#c87840}
 .mod-rarity.legendary{background:#c840c8}
 .mod-info{flex:1;min-width:0}
 .mod-name{font-size:.85rem;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mod-sub{font-size:.7rem;color:#666;margin-top:1px}
-.mod-count{font-size:.82rem;font-weight:700;color:#c8a84b;white-space:nowrap}
+.mod-count{font-size:.82rem;font-weight:700;color:var(--accent);white-space:nowrap}
 .mod-surplus{font-size:.7rem;color:#6adf9a;background:#0d2010;border:1px solid #1a4020;border-radius:3px;padding:1px 5px;white-space:nowrap}
 #mods-grid,#arcanes-grid,#ing-grid{display:flex;flex-direction:column;gap:.35rem}
 .sell-card{background:#0d1a0d;border:1px solid #2a5530;border-radius:6px;padding:.6rem .8rem;display:flex;flex-direction:column;justify-content:space-between;min-height:72px}
@@ -226,7 +232,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .sell-reason{font-size:.68rem;padding:2px 6px;border-radius:3px;background:#1a4020;color:#7aff9a;border:1px solid #2a6030;white-space:nowrap}
 .sell-reason.reason-mastered{background:#1a2010;color:#8acd5a;border-color:#3a5020}
 .sell-reason.reason-owned{background:#0d1e30;color:#7aaeff;border-color:#1a3a60}
-.sell-reason.reason-claimable{background:#2a2000;color:#c8a84b;border-color:#554400}
+.sell-reason.reason-claimable{background:#2a2000;color:var(--accent);border-color:var(--accent-border)}
 .sell-reason.reason-crafting{background:#1e0d35;color:#bb88ff;border-color:#6a3ab0}
 .sell-top{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px}
 .sell-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:auto}
@@ -252,7 +258,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .mr-ranks{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.1rem}
 .mr-rank-chip{font-size:.67rem;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
 .mr-rank-chip.done{background:#1a2010;color:#8acd5a;border-color:#3a5020}
-.mr-rank-chip.iscurrent{background:#2a2000;color:#f0d080;border-color:#e8c86b;box-shadow:0 0 0 1px rgba(232,200,107,.3)}
+.mr-rank-chip.iscurrent{background:#2a2000;color:var(--accent-light);border-color:#e8c86b;box-shadow:0 0 0 1px rgba(232,200,107,.3)}
 .mr-rank-chip.reachable{background:#0f2a1e;color:#7aeaaa;border-color:#2a6045}
 .mr-rank-chip.far{background:#111118;color:#444;border-color:#222228}
 .mr-summary-line{font-size:.68rem;color:#666;border-top:1px solid #222228;padding-top:.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
@@ -260,13 +266,13 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 /* Calculator */
 .calc-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.25rem}
 .calc-current{font-size:1rem;color:#ccc}
-.calc-current strong{color:#c8a84b;font-size:1.3rem}
+.calc-current strong{color:var(--accent);font-size:1.3rem}
 .calc-target-row{display:flex;align-items:center;gap:.6rem}
 .calc-bar-wrap{margin-bottom:1.25rem}
 .calc-bar-label{font-size:.8rem;color:#888;margin-bottom:.5rem;display:flex;justify-content:space-between}
 .calc-bar-bg{height:22px;background:#1a1a20;border-radius:11px;overflow:hidden;position:relative;display:flex}
 .calc-seg{height:100%;transition:width .4s;flex-shrink:0}
-.seg-claim{background:#c8a84b}
+.seg-claim{background:var(--accent)}
 .seg-owned{background:#4a8aee}
 .seg-craft{background:#4aaa60}
 .seg-bp{background:#885520}
@@ -278,8 +284,8 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .calc-box-title{font-size:.7rem;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem}
 .calc-box-val{font-size:1.4rem;font-weight:500;color:#e0e0e0}
 .calc-box-sub{font-size:.75rem;color:#666;margin-top:.2rem}
-.calc-box.highlight{border-color:#c8a84b;background:#1a1600}
-.calc-box.highlight .calc-box-val{color:#c8a84b}
+.calc-box.highlight{border-color:var(--accent);background:var(--accent-bg3)}
+.calc-box.highlight .calc-box-val{color:var(--accent)}
 .calc-box.green{border-color:#2a5535;background:#0d1a10}
 .calc-box.green .calc-box-val{color:#7aff9a}
 .calc-items-list{margin-top:1rem}
@@ -287,19 +293,23 @@ select.fb:focus{outline:none;border-color:#c8a84b}
 .calc-item-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:5px;background:#111116;border:1px solid #2a2a30;margin-bottom:3px;font-size:.82rem}
 .calc-item-name{flex:1;color:#ccc}
 .calc-item-cat{font-size:.68rem;padding:1px 5px;border-radius:3px}
-.calc-item-xp{color:#c8a84b;font-weight:500;white-space:nowrap}
+.calc-item-xp{color:var(--accent);font-weight:500;white-space:nowrap}
+.theme-picker{display:inline-flex;gap:.4rem;vertical-align:middle;margin-left:.9rem}
+.theme-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s ease,border-color .15s ease;padding:0}
+.theme-dot:hover{transform:scale(1.15)}
+.theme-dot.on{border-color:#fff}
 </style>
 </head>
 <body>
-<h1 class="intro-el" style="animation-delay:.02s">⚙ Warframe Mastery Checker</h1>
+<h1 class="intro-el" style="animation-delay:.02s">⚙ Warframe Mastery Checker<span class="theme-picker" id="theme-picker"></span></h1>
 <p class="sub intro-el" style="animation-delay:.09s">Arme și warframe-uri care nu au contribuit niciodată la mastery rank</p>
 
 <div class="card intro-el" style="animation-delay:.16s;border-color:#2a3a20;background:#111610">
   <div style="font-size:.8rem;color:#8acd5a;font-weight:500;margin-bottom:.6rem">📋 Cum obții fișierul lastData.dat</div>
   <ol style="font-size:.8rem;color:#aaa;padding-left:1.2rem;line-height:1.9">
-    <li>Instalează <strong style="color:#e0e0e0">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:#c8a84b">alecaframe.com</a></li>
+    <li>Instalează <strong style="color:#e0e0e0">AlecaFrame</strong> dacă nu îl ai deja → <a href="https://alecaframe.com" target="_blank" style="color:var(--accent)">alecaframe.com</a></li>
     <li>Pornește Warframe și lasă AlecaFrame să se sincronizeze (iconița din system tray)</li>
-    <li>Deschide <strong style="color:#e0e0e0">File Explorer</strong> și navighează la: <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;color:#c8a84b">%localappdata%\AlecaFrame</code></li>
+    <li>Deschide <strong style="color:#e0e0e0">File Explorer</strong> și navighează la: <code style="background:#1a1a1a;padding:1px 6px;border-radius:3px;color:var(--accent)">%localappdata%\AlecaFrame</code></li>
     <li>Găsești fișierul <strong style="color:#e0e0e0">lastData.dat</strong> — trage-l mai jos sau apasă pe „alege fișierul"</li>
   </ol>
 </div>
@@ -436,7 +446,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
           <span style="font-size:.82rem;color:#aaa">XP actual:</span>
           <input type="number" id="calc-xp-override" min="0" style="width:150px;background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#e0e0e0;padding:.35rem .6rem;font-size:.9rem;text-align:center" title="Pre-completat din fișier. Pentru precizie maximă: ESC → Profile → hover pe bara de mastery">
           <span style="font-size:.72rem;color:#555">| Target:</span>
-          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#c8a84b;padding:.35rem .6rem;font-size:1rem;text-align:center">
+          <input type="number" id="calc-target" min="1" max="36" style="width:70px;background:#111116;border:1px solid #2a2a35;border-radius:6px;color:var(--accent);padding:.35rem .6rem;font-size:1rem;text-align:center">
           <button class="fb" id="calc-btn" style="background:#1a2010;border-color:#3a5020;color:#8acd5a">Calculează</button>
           <span style="font-size:.7rem;color:#444">💡 XP exact: ESC → Profile → hover pe bara de mastery</span>
         </div>
@@ -454,7 +464,7 @@ select.fb:focus{outline:none;border-color:#c8a84b}
             <div class="calc-seg seg-bp"    id="seg-bp"    style="width:0%"></div>
           </div>
           <div class="calc-bar-legend">
-            <span><span class="dot" style="background:#c8a84b"></span>⬇ Foundry</span>
+            <span><span class="dot" style="background:var(--accent)"></span>⬇ Foundry</span>
             <span><span class="dot" style="background:#4a8aee"></span>🎒 Inventar</span>
             <span><span class="dot" style="background:#4aaa60"></span>🔨 Craftabile</span>
             <span><span class="dot" style="background:#885520"></span>📦 BP deținut</span>
@@ -1784,11 +1794,11 @@ async function process(file){
 
     document.getElementById('stats').innerHTML=
       `<div class="sbox"><div class="snum">${notMastered.length}</div><div class="slbl">Total</div></div>`+
-      `<div class="sbox" style="border-color:#554400"><div class="snum" style="color:#c8a84b">${claimCount}</div><div class="slbl">De luat</div></div>`+
+      `<div class="sbox" style="border-color:var(--accent-border)"><div class="snum" style="color:var(--accent)">${claimCount}</div><div class="slbl">De luat</div></div>`+
       (craftingCount?`<div class="sbox" style="border-color:#5a3a8a"><div class="snum" style="color:#bb88ff">${craftingCount}</div><div class="slbl">În craftare</div></div>`:'')+
       `<div class="sbox" style="border-color:#1a3a60"><div class="snum" style="color:#7aaeff">${ownedCount}</div><div class="slbl">În inventar</div></div>`+
       `<div class="sbox" style="border-color:#2a5535"><div class="snum" style="color:#7aff9a">${craftCount}</div><div class="slbl">Craftabile</div></div>`+
-      `<div class="sbox" style="border-color:#4a4020"><div class="snum" style="color:#ffcc55">${bpCount}</div><div class="slbl">BP deținut</div></div>`+
+      `<div class="sbox" style="border-color:var(--accent-border2)"><div class="snum" style="color:var(--accent-lighter)">${bpCount}</div><div class="slbl">BP deținut</div></div>`+
       Object.entries(cats).map(([k,v])=>`<div class="sbox"><div class="snum">${v}</div><div class="slbl">${labels[k]}</div></div>`).join('');
 
     document.getElementById('skeleton-loading').style.display='none';
@@ -2121,6 +2131,53 @@ function applyMRBackgroundTheme(mr){
   document.documentElement.style.setProperty('--mr-glow', `hsla(${hue.toFixed(0)},75%,58%,${alpha.toFixed(3)})`);
 }
 
+// Accent color theme — everything that was hardcoded gold (#c8a84b and its
+// family of shades) now reads from CSS custom properties, so switching the
+// theme just means overwriting those variables. Each palette is hand-picked
+// per color (not auto-derived from one hue) to keep contrast/mood consistent
+// with the original gold theme's design.
+const ACCENT_THEMES = {
+  gold:   {label:'Auriu',   swatch:'#c8a84b', accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540', border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600', rgb:'200,168,75', lightRgb:'240,208,128'},
+  cyan:   {label:'Cyan',    swatch:'#4bc8c0', accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86', border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18', rgb:'75,200,192', lightRgb:'128,240,230'},
+  red:    {label:'Roșu',    swatch:'#c85a5a', accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540', border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800', rgb:'200,90,90',  lightRgb:'240,157,128'},
+  purple: {label:'Mov',     swatch:'#a85ac8', accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a', border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a', rgb:'168,90,200', lightRgb:'208,128,240'},
+  green:  {label:'Verde',   swatch:'#5ac87a', accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55', border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08', rgb:'90,200,122', lightRgb:'128,240,160'},
+};
+function applyAccentTheme(name){
+  const t = ACCENT_THEMES[name] || ACCENT_THEMES.gold;
+  const root = document.documentElement.style;
+  root.setProperty('--accent', t.accent);
+  root.setProperty('--accent-light', t.light);
+  root.setProperty('--accent-lighter', t.lighter);
+  root.setProperty('--accent-mid', t.mid);
+  root.setProperty('--accent-dim', t.dim);
+  root.setProperty('--accent-border', t.border);
+  root.setProperty('--accent-border2', t.border2);
+  root.setProperty('--accent-bg', t.bg);
+  root.setProperty('--accent-bg2', t.bg2);
+  root.setProperty('--accent-bg3', t.bg3);
+  root.setProperty('--accent-rgb', t.rgb);
+  root.setProperty('--accent-light-rgb', t.lightRgb);
+  document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('on', d.dataset.theme===name));
+  try { localStorage.setItem('wf_accent_theme', name); } catch(e){}
+}
+function initThemePicker(){
+  const picker = document.getElementById('theme-picker');
+  if(!picker) return;
+  Object.entries(ACCENT_THEMES).forEach(([key,t])=>{
+    const btn = document.createElement('button');
+    btn.className = 'theme-dot';
+    btn.dataset.theme = key;
+    btn.title = t.label;
+    btn.style.background = t.swatch;
+    btn.addEventListener('click', ()=>applyAccentTheme(key));
+    picker.appendChild(btn);
+  });
+  let saved = 'gold';
+  try { saved = localStorage.getItem('wf_accent_theme') || 'gold'; } catch(e){}
+  applyAccentTheme(saved);
+}
+
 function renderMRProgress(currentMR, totalXP, missingItems){
   const wrap = document.getElementById('mr-progress-wrap');
   if(!wrap) return;
@@ -2280,9 +2337,9 @@ function runCalculator(){
       <div class="calc-box-val">${xpNeeded.toLocaleString()}</div>
       <div class="calc-box-sub">${mrName(currentMR)} → ${mrName(target)}</div>
     </div>
-    <div class="calc-box" style="border-color:#c8a84b">
-      <div class="calc-box-title" style="color:#c8a84b">⬇ De luat din Foundry</div>
-      <div class="calc-box-val" style="color:#c8a84b">${claimXP.toLocaleString()}</div>
+    <div class="calc-box" style="border-color:var(--accent)">
+      <div class="calc-box-title" style="color:var(--accent)">⬇ De luat din Foundry</div>
+      <div class="calc-box-val" style="color:var(--accent)">${claimXP.toLocaleString()}</div>
       <div class="calc-box-sub">${claimItems.length} iteme</div>
     </div>
     <div class="calc-box" style="border-color:#2a4a7a">
@@ -2713,7 +2770,7 @@ function updateBreakdownBar(key, calc, maxPossible){
   const pct = Math.max(0, Math.min(100, (calc/maxPossible)*100));
   barFill.style.width = pct + '%';
   // Gold gradient toward full completion, brightening as it approaches 100%.
-  barFill.style.background = pct>=100 ? '#5ad684' : (pct>=60 ? '#e0b355' : '#c8a84b');
+  barFill.style.background = pct>=100 ? '#5ad684' : (pct>=60 ? 'var(--accent-mid)' : 'var(--accent)');
 }
 function renderBreakdownPanel(){
   const panel = document.getElementById('breakdown-panel');
@@ -2730,13 +2787,13 @@ function renderBreakdownPanel(){
     const max = maxPossible[key];
     const pctLabel = max ? `<div style="font-size:.62rem;color:#777;margin:0 0 .3rem 1.4rem">${Math.min(100,Math.round((calc/max)*100))}% din maximul posibil (${max.toLocaleString()})</div>` : '';
     const groupHdr = group ? `<div style="display:flex;align-items:center;gap:.5rem;margin:${idx===0?'0':'.7rem'} 0 .4rem">
-        <span style="font-size:.62rem;letter-spacing:.08em;color:#8a7540;font-weight:700;white-space:nowrap">${group}</span>
-        <span style="flex:1;height:1px;background:linear-gradient(90deg,#3a3020,transparent)"></span>
+        <span style="font-size:.62rem;letter-spacing:.08em;color:var(--accent-dim);font-weight:700;white-space:nowrap">${group}</span>
+        <span style="flex:1;height:1px;background:linear-gradient(90deg,var(--accent-bg),transparent)"></span>
       </div>` : '';
     return `${groupHdr}
       <div style="display:flex;align-items:center;gap:.4rem;padding:2px 0">
         <button class="bd-expand" data-cat="${key}" style="background:none;border:none;color:#888;cursor:pointer;font-size:.7rem;width:1rem;flex-shrink:0" ${items.length?'':'disabled'}>${items.length?'▸':'·'}</button>
-        <span style="color:#c8a84b;flex:1">${label}</span>
+        <span style="color:var(--accent);flex:1">${label}</span>
         <span style="color:#e8e8e8;font-weight:600;width:5.5rem;text-align:right">${calc.toLocaleString()}</span>
         <input class="bd-real" data-cat="${key}" type="text" inputmode="numeric" placeholder="real" value="${savedReal}" style="width:4.5rem;background:#0f0f14;border:1px solid #333;border-radius:4px;color:#eee;padding:1px 4px;font-size:.7rem;text-align:right">
         <span class="bd-diff" data-cat="${key}" style="width:3.5rem;text-align:right;font-size:.7rem;font-weight:700"></span>
@@ -2747,14 +2804,14 @@ function renderBreakdownPanel(){
   }).join('');
 
   panel.innerHTML = `
-    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid #3a3020;border-radius:8px;padding:1rem;max-width:460px;font-size:.8rem">
-      <div style="color:#f0d080;font-weight:700;font-size:.9rem;margin-bottom:.6rem;letter-spacing:.05em">MASTERY BREAKDOWN — calculat vs. real</div>
+    <div style="background:linear-gradient(180deg,#1a1712,#100e0a);border:1px solid var(--accent-bg);border-radius:8px;padding:1rem;max-width:460px;font-size:.8rem">
+      <div style="color:var(--accent-light);font-weight:700;font-size:.9rem;margin-bottom:.6rem;letter-spacing:.05em">MASTERY BREAKDOWN — calculat vs. real</div>
       <div style="display:flex;gap:.4rem;font-size:.65rem;color:#666;margin-bottom:.4rem;padding-left:1.4rem">
         <span style="flex:1"></span><span style="width:5.5rem;text-align:right">calculat</span><span style="width:4.5rem;text-align:right">real</span><span style="width:3.5rem;text-align:right">diferență</span>
       </div>
       ${rowsHtml}
-      <div style="border-top:1px solid #3a3020;padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
-        <span style="color:#f0d080">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
+      <div style="border-top:1px solid var(--accent-bg);padding-top:.5rem;margin-top:.3rem;display:flex;justify-content:space-between;font-weight:700">
+        <span style="color:var(--accent-light)">Total calculat</span><span style="color:#fff">${cats.total.toLocaleString()}</span>
       </div>
       <div style="margin-top:.5rem;font-size:.68rem;color:#666">Bara arată progresul spre maximul posibil pentru fiecare categorie (sursă: WARFRAME Wiki). Completează coloana "real" din poza ta din joc pentru diferență exactă. Click pe ▸ arată lista de iteme.</div>
     </div>`;
@@ -2855,6 +2912,7 @@ async function tryAutoLoadFromHandle() {
 tryAutoLoadFromHandle();
 updatePrimeBtn();
 applyMRBackgroundTheme(0);
+initThemePicker();
 
 document.getElementById('sortSelect').addEventListener('change', render);
 
@@ -3015,7 +3073,7 @@ function renderIngredients(){
       i.category === 'Primary' ? 'badge-primary' :
       i.category === 'Secondary' ? 'badge-secondary' : 'badge-melee';
     return `<div class="mod-card">
-      <div class="mod-rarity" style="background:#c8a84b;width:4px;border-radius:2px;align-self:stretch;flex-shrink:0"></div>
+      <div class="mod-rarity" style="background:var(--accent);width:4px;border-radius:2px;align-self:stretch;flex-shrink:0"></div>
       <div class="mod-info">
         <div class="mod-name">${i.name}</div>
         <div class="mod-sub">Necesară pentru: ${i.usedIn.join(', ')}</div>
@@ -3363,7 +3421,7 @@ function renderArcanes() {
     grid.innerHTML = '<p style="color:#555;font-size:.82rem;padding:.5rem">Niciun arcane duplicat găsit.</p>';
     return;
   }
-  const rarityColor = {common:'#888',uncommon:'#4a8a4a',rare:'#c8a84b',legendary:'#c87840'};
+  const rarityColor = {common:'#888',uncommon:'#4a8a4a',rare:'var(--accent)',legendary:'#c87840'};
   grid.innerHTML = f.map(a => {
     const marketSlug = a.name.toLowerCase().replace(/ /g,'_');
     const marketUrl = `https://warframe.market/items/${marketSlug}`;
