@@ -23,6 +23,10 @@
   --tone-888:#888; --tone-777:#777; --tone-666:#666; --tone-555:#555; --tone-444:#444; --tone-333:#333;
   --border-neutral:#2a2a30; --panel-deep:#0f0f14;
   --panel-grad-1:#1a1712; --panel-grad-2:#100e0a; --text-strong:#fff;
+  --status-owned-b:#2a4055; --status-owned-bg:#0d1520; --status-owned-text:#7aaeff;
+  --status-craftable-b:#2a5535; --status-craftable-bg:#0d1a10; --status-craftable-text:#7aff9a;
+  --status-partial-b:#3a3010; --status-partial-bg:#111008;
+  --status-crafting-b:#5a3a8a; --status-crafting-bg:#120d1a; --status-crafting-text:#bb88ff;
 }
 body{font-family:var(--font-family);background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) var(--bg-base);color:var(--text-color);min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
 @keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
@@ -83,9 +87,9 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .wcard{background:var(--wcard-bg);border:var(--card-border-w) solid var(--border-neutral);border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
 .wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .wcard.claimable{border-color:var(--accent);background:var(--accent-bg3)}
-.wcard.owned{border-color:#2a4055;background:#0d1520}
-.wcard.craftable{border-color:#2a5535;background:#0d1a10}
-.wcard.partial{border-color:#3a3010;background:#111008}
+.wcard.owned{border-color:var(--status-owned-b);background:var(--status-owned-bg)}
+.wcard.craftable{border-color:var(--status-craftable-b);background:var(--status-craftable-bg)}
+.wcard.partial{border-color:var(--status-partial-b);background:var(--status-partial-bg)}
 .wcard.prime-item{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.55),inset 0 0 14px rgba(var(--accent-rgb),.06);position:relative}
 .wcard.prime-item:hover{box-shadow:0 0 0 1px rgba(var(--accent-rgb),.7),inset 0 0 14px rgba(var(--accent-rgb),.08),0 4px 12px rgba(0,0,0,.35)}
 .wcard.status-improved{animation:statusPulse 2s ease-out 1}
@@ -109,18 +113,18 @@ select.fb:focus{outline:none;border-color:var(--accent)}
   70%{box-shadow:0 0 0 1px rgba(90,214,132,.35),0 0 10px rgba(90,214,132,.2)}
   100%{box-shadow:0 0 0 0 rgba(90,214,132,0),0 0 0 rgba(90,214,132,0)}
 }
-.wcard.crafting{border-color:#5a3a8a;background:#120d1a}
-.tag-crafting{background:#1e0d35;color:#bb88ff;border:1px solid #6a3ab0}
+.wcard.crafting{border-color:var(--status-crafting-b);background:var(--status-crafting-bg)}
+.tag-crafting{background:var(--status-crafting-bg);color:var(--status-crafting-text);border:1px solid var(--status-crafting-b)}
 .crafting-header{font-size:.78rem;color:#bb88ff;font-weight:500;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
 .crafting-header::after{content:'';flex:1;height:1px;background:#3a2060}
 .crafting-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
 .wname{font-size:.88rem;color:var(--text-color);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wcard-footer{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:4px;flex-wrap:wrap}
 .craft-tag{font-size:.65rem;padding:2px 6px;border-radius:3px;white-space:nowrap;font-weight:500}
-.tag-claim{background:#2a2000;color:var(--accent);border:1px solid var(--accent-border)}
-.tag-owned{background:#0d1e30;color:#7aaeff;border:1px solid #1a3a60}
-.tag-craft{background:#1a4020;color:#7aff9a;border:1px solid #2a6030}
-.tag-bp{background:var(--accent-bg2);color:var(--accent-lighter);border:1px solid #554020}
+.tag-claim{background:var(--accent-bg2);color:var(--accent);border:1px solid var(--accent-border)}
+.tag-owned{background:var(--status-owned-bg);color:var(--status-owned-text);border:1px solid var(--status-owned-b)}
+.tag-craft{background:var(--status-craftable-bg);color:var(--status-craftable-text);border:1px solid var(--status-craftable-b)}
+.tag-bp{background:var(--accent-bg2);color:var(--accent-lighter);border:1px solid var(--accent-border2)}
 .wiki-btn{font-size:.68rem;padding:2px 7px;border-radius:3px;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;cursor:pointer;text-decoration:none;white-space:nowrap;transition:all .15s;margin-left:auto}
 .wiki-btn:hover{background:#252540;border-color:var(--accent);color:var(--accent)}
 .info-btn{font-size:.68rem;width:18px;height:18px;border-radius:50%;background:#1a1a2a;border:1px solid #3a3a55;color:#7a7aaa;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;font-style:normal;line-height:1}
@@ -2254,6 +2258,10 @@ const FULL_THEMES = {
     tones:{eee:'#221f18', e8:'#2b2820', ccc:'#3d3a2f', aaa:'#5f5a48', 999:'#706a56', 888:'#8a8570', 777:'#7d7863', 666:'#9a957f', 555:'#aba68f', 444:'#bcb7a0', 333:'#cdc9b3'},
     borderNeutral:'#d8cead', panelDeep:'#e8dfc4',
     panelGrad1:'#f5eeda', panelGrad2:'#ece2c8', textStrong:'#1a1710',
+    statusOwnedB:'#5a7a9a', statusOwnedBg:'#dce8f0', statusOwnedText:'#2a5a9a',
+    statusCraftableB:'#4a8a5a', statusCraftableBg:'#dcecdc', statusCraftableText:'#1e6a34',
+    statusPartialB:'#a08040', statusPartialBg:'#f0e6cc',
+    statusCraftingB:'#8a5ab0', statusCraftingBg:'#ece0f5', statusCraftingText:'#6a3ab0',
   },
 };
 function applyAccentTheme(name){
@@ -2298,6 +2306,17 @@ function applyAccentTheme(name){
   root.setProperty('--panel-grad-1', t.panelGrad1 || '#1a1712');
   root.setProperty('--panel-grad-2', t.panelGrad2 || '#100e0a');
   root.setProperty('--text-strong', t.textStrong || '#fff');
+  root.setProperty('--status-owned-b', t.statusOwnedB || '#2a4055');
+  root.setProperty('--status-owned-bg', t.statusOwnedBg || '#0d1520');
+  root.setProperty('--status-owned-text', t.statusOwnedText || '#7aaeff');
+  root.setProperty('--status-craftable-b', t.statusCraftableB || '#2a5535');
+  root.setProperty('--status-craftable-bg', t.statusCraftableBg || '#0d1a10');
+  root.setProperty('--status-craftable-text', t.statusCraftableText || '#7aff9a');
+  root.setProperty('--status-partial-b', t.statusPartialB || '#3a3010');
+  root.setProperty('--status-partial-bg', t.statusPartialBg || '#111008');
+  root.setProperty('--status-crafting-b', t.statusCraftingB || '#5a3a8a');
+  root.setProperty('--status-crafting-bg', t.statusCraftingBg || '#120d1a');
+  root.setProperty('--status-crafting-text', t.statusCraftingText || '#bb88ff');
   document.documentElement.setAttribute('data-theme', name);
   currentAccentHue = t.hue;
   applyMRBackgroundTheme(lastKnownMR);
