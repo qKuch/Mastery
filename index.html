@@ -354,7 +354,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 <p class="intro-el" style="animation-delay:.12s;font-size:.7rem;color:var(--tone-666);margin:-.4rem 0 .8rem">
   📦 Catalog de iteme verificat pentru <strong style="color:var(--tone-888)">Update 42.0 (2026-03-25)</strong> ·
   <a href="https://wiki.warframe.com/w/Mastery_Rank#Total_Mastery" target="_blank" rel="noopener" style="color:var(--accent)">verifică pe wiki ↗</a>
-  <span style="color:var(--tone-555)"> — nu e verificare automată.</span>
+  <span style="color:var(--tone-555)"> — nu e verificare automată; dacă a mai ieșit un update de Warframe, cere-mi să regenerez catalogul.</span>
 </p>
 
 <div class="card intro-el" style="animation-delay:.16s;border-color:var(--info-card-b);background:var(--info-card-bg)">
@@ -379,6 +379,11 @@ button:focus-visible, a:focus-visible, input:focus-visible,
     <span id="loaded-filename" style="font-size:.75rem;color:var(--tone-666);margin-left:.5rem"></span>
   </div>
   <div class="status" id="st"></div>
+  <div id="catalog-warning" style="display:none;margin-top:.75rem;background:var(--msg-info-bg);color:var(--msg-info-text);border:1px solid var(--msg-info-b);border-radius:6px;padding:.6rem .9rem;font-size:.78rem;line-height:1.6;position:relative">
+    <button id="catalog-warning-close" style="position:absolute;top:6px;right:8px;background:none;border:none;color:inherit;cursor:pointer;font-size:.9rem;opacity:.7" title="Ascunde">✕</button>
+    <div style="font-weight:600;margin-bottom:.3rem">⚠ Verificare automată a catalogului</div>
+    <div id="catalog-warning-body"></div>
+  </div>
 </div>
 
 <div id="skeleton-loading" style="display:none;margin-top:1rem">
@@ -620,6 +625,7 @@ let missing=[], activeCat='all', activeStatuses=new Set(), primeFilter='all'; //
 // highlight pulse on this render. Persisted across page reloads via
 // localStorage so re-uploading the same file later still shows what's new.
 let improvedItemNames = new Set();
+let catalogWarnings = [];
 const STATUS_RANK = {claimable:0, owned:1, craftable:2, bp_only:3, not_built:4};
 function loadItemStatusSnapshot(){
   try { return JSON.parse(localStorage.getItem('wf_item_status_snapshot')||'{}'); } catch(e){ return {}; }
@@ -1428,6 +1434,52 @@ function computeCategoryMaxPossible(){
   return CATEGORY_MAX_POSSIBLE;
 }
 
+// Reference item counts, sourced from the WARFRAME Wiki's Mastery Rank page
+// (Update 42.0, 2026-03-25) — see CATEGORY_MAX_POSSIBLE for the full table.
+// Only categories with a clean 1:1 comparison are listed here: Melee is
+// deliberately excluded because the wiki's melee total bundles in Zaws,
+// which aren't part of this app's static item catalog at all (they're
+// modular, tracked separately) — comparing against it would always show a
+// false mismatch that has nothing to do with a real catalog problem.
+const CATALOG_EXPECTED_COUNTS = {
+  Primary: 194, Secondary: 147, 'Arch-Gun': 20, 'Arch-Melee': 8,
+  Warframes: 117, Archwing: 5, Sentinels: 17,
+};
+function validateCatalogHealth(missingList, allWeaponsList, warframesList, archwingList, sentinelsList){
+  const warnings = [];
+
+  // 1. "Ghost" items — appear in the missing list with zero components and
+  // no craft status at all. A real not-yet-owned item always has SOME
+  // acquisition path (components, a status, or is modular); an item with
+  // none of that is almost always a bogus/internal duplicate catalog entry,
+  // exactly like the fake "Grimoire" (TnDoppelgangerGrimoire) found today.
+  const ghosts = missingList.filter(w=>{
+    const hasComps = (w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
+    return !hasComps && !w.craftStatus && !w.isModular;
+  });
+  if(ghosts.length){
+    warnings.push(`${ghosts.length} item(e) suspecte, fără componente și fără status de crafting — posibil duplicate fantomă în catalog: ${ghosts.map(w=>w.name).join(', ')}. Trimite-mi numele ca să le exclud.`);
+  }
+
+  // 2. Category counts vs the wiki's published totals. A mismatch usually
+  // means either a new Warframe update added/removed items (catalog needs
+  // regenerating) or another bogus duplicate slipped through.
+  const excludedWarframes = new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel']);
+  const counts = { Warframes:0, Archwing:0, Sentinels:0 };
+  allWeaponsList.forEach(w=>{ counts[w.category] = (counts[w.category]||0) + 1; });
+  warframesList.forEach(w=>{ if(!excludedWarframes.has(w.name)) counts.Warframes++; });
+  archwingList.forEach(()=>{ counts.Archwing++; });
+  sentinelsList.forEach(()=>{ counts.Sentinels++; });
+  Object.entries(CATALOG_EXPECTED_COUNTS).forEach(([cat, expected])=>{
+    const actual = counts[cat] || 0;
+    if(actual !== expected){
+      warnings.push(`Categoria "${cat}" are ${actual} iteme în catalog, dar WARFRAME Wiki (Update 42.0) arată ${expected}. Probabil a apărut un update de joc — spune-mi să regenerez catalogul.`);
+    }
+  });
+
+  return warnings;
+}
+
 async function process(file){
   await _subRecipesReady;
   if(!file)return;
@@ -1803,6 +1855,12 @@ async function process(file){
 
     missing=notMastered;
 
+    // Auto-validate the catalog on every load — catches the exact kind of
+    // bug we hunted manually today (a bogus duplicate item, like the fake
+    // "Grimoire" with no components) instead of relying on someone noticing
+    // an empty card by chance.
+    catalogWarnings = validateCatalogHealth(missing, allWeapons, allWarframesRaw, allArchwingsRaw, allSentinelsRaw);
+
     // Detect items whose craftStatus improved since the last load (e.g. a
     // blueprint finished building, or a component you were missing got
     // picked up) — these get a highlight pulse in render().
@@ -1867,6 +1925,14 @@ async function process(file){
 
     document.getElementById('skeleton-loading').style.display='none';
     document.getElementById('results').style.display='block';
+    const warnBox = document.getElementById('catalog-warning');
+    const warnBody = document.getElementById('catalog-warning-body');
+    if(catalogWarnings.length){
+      warnBody.innerHTML = catalogWarnings.map(w=>`<div style="margin-top:2px">• ${w}</div>`).join('');
+      warnBox.style.display = '';
+    } else {
+      warnBox.style.display = 'none';
+    }
     st(`✓ Gata! ${notMastered.length} iteme fără mastery — ${claimCount} de luat din Foundry${craftingCount?`, ${craftingCount} în craftare`:''}${craftCount?`, ${craftCount} craftabile`:''}${bpCount?`, ${bpCount} cu BP`:'.'}.`,'s-ok');
     render();
   }catch(err){
@@ -2685,6 +2751,9 @@ function runCalculator(){
 }
 
 // Popup close
+document.getElementById('catalog-warning-close').addEventListener('click', ()=>{
+  document.getElementById('catalog-warning').style.display = 'none';
+});
 document.getElementById('info-popup').addEventListener('click', e=>{
   if(e.target.id==='popup-close') document.getElementById('info-popup').classList.remove('show');
 });
