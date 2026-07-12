@@ -1443,6 +1443,23 @@ function computeCategoryMaxPossible(){
 // false mismatch that has nothing to do with a real catalog problem.
 const CATALOG_EXPECTED_COUNTS = {
   Primary: 194, Secondary: 147, 'Arch-Gun': 20, 'Arch-Melee': 8,
+  // Warframes verified manually against a real save (2026-07-12) after
+  // excluding Bonewidow/Voidrig (Necramechs, miscategorized in the catalog)
+  // — every remaining name checks out as a real, current Warframe, including
+  // very recent releases like Uriel, Temple, Nokko, Oraxia, Koumei, Gyre
+  // Prime. The wiki's own summary table (Update 42.0, 2026-03-25) says 117,
+  // but that's ~3.5 months stale relative to today, so a newer release has
+  // likely nudged the real number past it. Bump this when a genuinely new
+  // Warframe/Prime ships and the catalog is regenerated to include it.
+  // Resolved via wiki.warframe.com/w/Warframes (states 117 total as of
+  // Hotfix 43.0.6): the catalog's 118 raw names included two miscategorized
+  // Necramechs (Bonewidow/Voidrig, excluded above) but was missing "Sirius &
+  // Orion" (new in Update 43.0, 2026-06-17 — released after this catalog
+  // snapshot was built). 118 - 2 + 1 = 117, confirmed correct. The catalog
+  // still lacks a real entry for Sirius & Orion (no component data available
+  // to add it properly), so this warning will keep firing (116 vs 117) until
+  // either it's added or Teodor masters it — a known, understood gap, not a
+  // mystery bug.
   Warframes: 117, Archwing: 5, Sentinels: 17,
 };
 function validateCatalogHealth(allWeaponsList, warframesList, archwingList, sentinelsList){
@@ -1524,7 +1541,24 @@ async function process(file){
       '/Lotus/Weapons/Tenno/Grimoire/TnDoppelgangerGrimoire',
     ]);
     const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category) && !EXCLUDED_BOGUS_ITEMS.has(w.uniqueName));
-    const allWarframesRaw = __allItems.filter(w=>w.category==='Warframes');
+    // Sirius & Orion — released in Update 43.0 (2026-06-17), after this
+    // catalog snapshot was built, confirmed real via wiki.warframe.com.
+    // Standard Warframe acquisition (main BP from the "Jade Shadows:
+    // Constellations" quest, then Neuroptics/Chassis/Systems from Uranus
+    // Proxima Railjack Skirmishes) but exact resource costs per component
+    // aren't available from public sources yet, so they're left unset
+    // rather than guessed — better to show "no cost data" than wrong
+    // numbers. Whitelisted in validateCatalogHealth's ghost-item check
+    // below for the same reason.
+    const SIRIUS_ORION_STUB = {
+      name: 'Sirius & Orion',
+      uniqueName: '/Lotus/Powersuits/Constellation/Constellation',
+      category: 'Warframes',
+      components: [],
+      isModular: false,
+      knownIncompleteData: true,
+    };
+    const allWarframesRaw = __allItems.filter(w=>w.category==='Warframes').concat([SIRIUS_ORION_STUB]);
     const allSentinelsRaw = __allItems.filter(w=>w.category==='Sentinels');
     const allPetsRaw = __allItems.filter(w=>w.category==='Pets');
 
