@@ -18,7 +18,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
 @keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
 html[data-theme="infested"] body{animation:infestedBreathe 6s ease-in-out infinite}
-h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem}
+h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;position:relative;z-index:30}
 .sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
 .card{background:#18181c;border:1px solid #2a2a30;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
 .drop{border:2px dashed #3a3a45;border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
@@ -301,7 +301,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .theme-picker{position:relative;display:inline-block;vertical-align:middle;margin-left:.9rem}
 .theme-btn{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#ccc;padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
 .theme-btn:hover{border-color:var(--accent)}
-.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:#18181c;border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;display:none;flex-direction:column;gap:2px}
+.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:#18181c;border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:100;display:none;flex-direction:column;gap:2px}
 .theme-menu.open{display:flex}
 .theme-opt{display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;background:none;border:none;text-align:left;color:#ccc;font-size:.8rem;font-family:inherit;width:100%}
 .theme-opt:hover{background:#222228}
