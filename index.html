@@ -12,12 +12,16 @@
   --accent-mid:#e0b355; --accent-dim:#8a7540; --accent-border:#554400;
   --accent-border2:#4a4020; --accent-bg:#3a3020; --accent-bg2:#2a2010; --accent-bg3:#1a1600;
   --accent-rgb:200,168,75; --accent-light-rgb:240,208,128;
+  --radius-lg:10px; --radius-btn:6px; --card-border-w:1px; --letter-spacing:normal;
+  --bg-pattern:none;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-pattern),radial-gradient(ellipse 1100px 700px at 50% 0%,var(--mr-glow),transparent 70%) #0d0d0f;color:#e0e0e0;min-height:100vh;padding:2rem;transition:background 1.4s ease,filter 1.4s ease;letter-spacing:var(--letter-spacing)}
+@keyframes infestedBreathe{0%,100%{filter:saturate(1) brightness(1)}50%{filter:saturate(1.15) brightness(1.04)}}
+html[data-theme="infested"] body{animation:infestedBreathe 6s ease-in-out infinite}
 h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem}
 .sub{font-size:.8rem;color:#555;margin-bottom:1.5rem}
-.card{background:#18181c;border:1px solid #2a2a30;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
-.drop{border:2px dashed #3a3a45;border-radius:8px;padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
+.card{background:#18181c;border:1px solid #2a2a30;border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1.25rem;letter-spacing:var(--letter-spacing)}
+.drop{border:2px dashed #3a3a45;border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s}
 .drop:hover,.drop.over{border-color:var(--accent);background:#1a1a10}
 .drop input{display:none}
 .drop-icon{font-size:2rem;margin-bottom:.5rem}
@@ -30,7 +34,7 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem}
 .toolbar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.9rem}
 .toolbar input[type=text]{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#e0e0e0;padding:.4rem .7rem;font-size:.85rem;flex:1;min-width:160px}
 .toolbar input[type=text]:focus{outline:none;border-color:var(--accent)}
-.fb{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fb{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#aaa;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fb:hover{border-color:var(--accent);color:var(--accent)}
 .fb.on{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent)}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease,text-shadow .3s ease}
@@ -48,9 +52,9 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem}
   60%{transform:scale(.94) rotate(4deg)}
   100%{transform:scale(1) rotate(0deg)}
 }
-.fc{background:#0f2010;border:1px solid #1a4020;border-radius:6px;color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fc{background:#0f2010;border:1px solid #1a4020;border-radius:var(--radius-btn);color:#7aff9a;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fc:hover,.fc.on{background:#152a18;border-color:#4aaa60;color:#afffbf}
-.fs{background:#111116;border:1px solid #2a2a35;border-radius:6px;color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fs{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#888;padding:.4rem .8rem;font-size:.8rem;cursor:pointer;transition:all .15s;white-space:nowrap}
 .fs:hover{border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="claimable"]{background:#2a2000;border-color:var(--accent);color:var(--accent)}
 .fs.on[data-status="owned"]{background:#0d1e30;border-color:#1a3a60;color:#7aaeff}
@@ -67,7 +71,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .grid::-webkit-scrollbar{width:5px}
 .grid::-webkit-scrollbar-track{background:#111;border-radius:3px}
 .grid::-webkit-scrollbar-thumb{background:#3a3a45;border-radius:3px}
-.wcard{background:#111116;border:1px solid #2a2a30;border-radius:6px;padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
+.wcard{background:#111116;border:var(--card-border-w) solid #2a2a30;border-radius:var(--radius-btn);padding:.55rem .75rem;transition:transform .15s ease,box-shadow .2s ease,border-color .3s ease,background-color .3s ease}
 .wcard:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.35)}
 .wcard.claimable{border-color:var(--accent);background:var(--accent-bg3)}
 .wcard.owned{border-color:#2a4055;background:#0d1520}
@@ -83,7 +87,7 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .tab-fade-in{animation:tabFadeIn .22s ease}
 @keyframes tabFadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .skel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem}
-.skel-card{height:58px;border-radius:6px;background:#16161a;border:1px solid #26262e;position:relative;overflow:hidden}
+.skel-card{height:58px;border-radius:var(--radius-btn);background:#16161a;border:1px solid #26262e;position:relative;overflow:hidden}
 .skel-bar{border-radius:4px;background:#16161a;position:relative;overflow:hidden}
 .skel-card::after,.skel-bar::after{
   content:'';position:absolute;inset:0;
@@ -166,7 +170,7 @@ select.fb{appearance:none;padding-right:1.4rem;background-image:url("data:image/
 select.fb:focus{outline:none;border-color:var(--accent)}
 #results{display:none}
 .tabs{display:flex;gap:.5rem;margin-bottom:.0rem}
-.tab{background:#18181c;border:1px solid #2a2a35;border-radius:8px 8px 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
+.tab{background:#18181c;border:1px solid #2a2a35;border-radius:var(--radius-lg) var(--radius-lg) 0 0;color:#888;padding:.5rem 1.2rem;font-size:.85rem;cursor:pointer;transition:all .15s;border-bottom:none}
 .tab.on{background:#111116;border-color:var(--accent);color:var(--accent)}
 .tab-panel .card{border-radius:0 8px 8px 8px}
 .mat-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;margin-bottom:5px;transition:background .1s}
@@ -294,10 +298,16 @@ select.fb:focus{outline:none;border-color:var(--accent)}
 .calc-item-name{flex:1;color:#ccc}
 .calc-item-cat{font-size:.68rem;padding:1px 5px;border-radius:3px}
 .calc-item-xp{color:var(--accent);font-weight:500;white-space:nowrap}
-.theme-picker{display:inline-flex;gap:.4rem;vertical-align:middle;margin-left:.9rem}
-.theme-dot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s ease,border-color .15s ease;padding:0}
-.theme-dot:hover{transform:scale(1.15)}
-.theme-dot.on{border-color:#fff}
+.theme-picker{position:relative;display:inline-block;vertical-align:middle;margin-left:.9rem}
+.theme-btn{background:#111116;border:1px solid #2a2a35;border-radius:var(--radius-btn);color:#ccc;padding:.35rem .7rem;font-size:.75rem;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit}
+.theme-btn:hover{border-color:var(--accent)}
+.theme-menu{position:absolute;top:calc(100% + 6px);left:0;background:#18181c;border:1px solid #2a2a35;border-radius:8px;padding:.4rem;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:50;display:none;flex-direction:column;gap:2px}
+.theme-menu.open{display:flex}
+.theme-opt{display:flex;align-items:center;gap:.6rem;padding:.45rem .6rem;border-radius:6px;cursor:pointer;background:none;border:none;text-align:left;color:#ccc;font-size:.8rem;font-family:inherit;width:100%}
+.theme-opt:hover{background:#222228}
+.theme-opt.on{background:#222228;color:#fff}
+.theme-swatch{width:16px;height:16px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.2)}
+.theme-opt-sub{font-size:.68rem;color:#777;display:block}
 /* Keyboard-navigation focus ring — only shows for keyboard users (Tab),
    not on mouse clicks, via :focus-visible. Covers native interactive
    elements plus the div-based pseudo-buttons (role="button") used for
@@ -2162,21 +2172,53 @@ function applyMRBackgroundTheme(mr){
   document.documentElement.style.setProperty('--mr-glow', `hsla(${hue.toFixed(0)},75%,58%,${alpha.toFixed(3)})`);
 }
 
-// Accent color theme — everything that was hardcoded gold (#c8a84b and its
-// family of shades) now reads from CSS custom properties, so switching the
-// theme just means overwriting those variables. Each palette is hand-picked
-// per color (not auto-derived from one hue) to keep contrast/mood consistent
-// with the original gold theme's design. `hue` is each accent's approximate
-// HSL hue, used only to steer the ambient MR glow above.
-const ACCENT_THEMES = {
-  gold:   {label:'Auriu',   swatch:'#c8a84b', accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540', border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600', rgb:'200,168,75', lightRgb:'240,208,128', hue:42},
-  cyan:   {label:'Cyan',    swatch:'#4bc8c0', accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86', border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18', rgb:'75,200,192', lightRgb:'128,240,230', hue:176},
-  red:    {label:'Roșu',    swatch:'#c85a5a', accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540', border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800', rgb:'200,90,90',  lightRgb:'240,157,128', hue:0},
-  purple: {label:'Mov',     swatch:'#a85ac8', accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a', border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a', rgb:'168,90,200', lightRgb:'208,128,240', hue:282},
-  green:  {label:'Verde',   swatch:'#5ac87a', accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55', border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08', rgb:'90,200,122', lightRgb:'128,240,160', hue:138},
+// Full themes — not just accent color anymore. Each bundles a color
+// palette (same hand-picked family as before) with a distinct shape
+// language (border-radius, border thickness), a subtle background pattern,
+// and a hue for the ambient MR glow. Loosely inspired by Warframe factions,
+// so switching themes actually feels like a different "faction terminal"
+// rather than just a different highlight color.
+const FULL_THEMES = {
+  tenno: {
+    label:'Tenno (Auriu)', emoji:'⚙', swatch:'#c8a84b',
+    accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540',
+    border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600',
+    rgb:'200,168,75', lightRgb:'240,208,128', hue:42,
+    radiusLg:'10px', radiusBtn:'6px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
+  },
+  corpus: {
+    label:'Corpus (Cyan)', emoji:'💠', swatch:'#4bc8c0',
+    accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86',
+    border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18',
+    rgb:'75,200,192', lightRgb:'128,240,230', hue:176,
+    radiusLg:'3px', radiusBtn:'3px', borderW:'1px', letterSpacing:'.02em',
+    bgPattern:'repeating-linear-gradient(0deg,rgba(75,200,192,.03) 0px,rgba(75,200,192,.03) 1px,transparent 1px,transparent 42px),repeating-linear-gradient(90deg,rgba(75,200,192,.03) 0px,rgba(75,200,192,.03) 1px,transparent 1px,transparent 42px)',
+  },
+  grineer: {
+    label:'Grineer (Roșu)', emoji:'⚒', swatch:'#c85a5a',
+    accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540',
+    border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800',
+    rgb:'200,90,90', lightRgb:'240,157,128', hue:0,
+    radiusLg:'2px', radiusBtn:'2px', borderW:'2px', letterSpacing:'normal', bgPattern:'none',
+  },
+  orokin: {
+    label:'Orokin (Mov)', emoji:'✦', swatch:'#a85ac8',
+    accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a',
+    border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a',
+    rgb:'168,90,200', lightRgb:'208,128,240', hue:282,
+    radiusLg:'14px', radiusBtn:'10px', borderW:'1px', letterSpacing:'.03em',
+    bgPattern:'radial-gradient(ellipse 700px 500px at 50% 100%,rgba(168,90,200,.06),transparent 70%)',
+  },
+  infested: {
+    label:'Infested (Verde)', emoji:'🦠', swatch:'#5ac87a',
+    accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55',
+    border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08',
+    rgb:'90,200,122', lightRgb:'128,240,160', hue:138,
+    radiusLg:'18px', radiusBtn:'14px', borderW:'1px', letterSpacing:'normal', bgPattern:'none',
+  },
 };
 function applyAccentTheme(name){
-  const t = ACCENT_THEMES[name] || ACCENT_THEMES.gold;
+  const t = FULL_THEMES[name] || FULL_THEMES.tenno;
   const root = document.documentElement.style;
   root.setProperty('--accent', t.accent);
   root.setProperty('--accent-light', t.light);
@@ -2190,25 +2232,56 @@ function applyAccentTheme(name){
   root.setProperty('--accent-bg3', t.bg3);
   root.setProperty('--accent-rgb', t.rgb);
   root.setProperty('--accent-light-rgb', t.lightRgb);
+  root.setProperty('--radius-lg', t.radiusLg);
+  root.setProperty('--radius-btn', t.radiusBtn);
+  root.setProperty('--card-border-w', t.borderW);
+  root.setProperty('--letter-spacing', t.letterSpacing);
+  root.setProperty('--bg-pattern', t.bgPattern);
+  document.documentElement.setAttribute('data-theme', name);
   currentAccentHue = t.hue;
   applyMRBackgroundTheme(lastKnownMR);
-  document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('on', d.dataset.theme===name));
+  document.querySelectorAll('.theme-opt').forEach(d=>d.classList.toggle('on', d.dataset.theme===name));
+  const btnLabel = document.getElementById('theme-btn-label');
+  if(btnLabel) btnLabel.textContent = `${t.emoji} ${t.label}`;
   try { localStorage.setItem('wf_accent_theme', name); } catch(e){}
 }
 function initThemePicker(){
   const picker = document.getElementById('theme-picker');
   if(!picker) return;
-  Object.entries(ACCENT_THEMES).forEach(([key,t])=>{
-    const btn = document.createElement('button');
-    btn.className = 'theme-dot';
-    btn.dataset.theme = key;
-    btn.title = t.label;
-    btn.style.background = t.swatch;
-    btn.addEventListener('click', ()=>applyAccentTheme(key));
-    picker.appendChild(btn);
+  const btn = document.createElement('button');
+  btn.className = 'theme-btn';
+  btn.id = 'theme-picker-btn';
+  btn.innerHTML = `<span id="theme-btn-label">🎨 Temă</span> ▾`;
+  const menu = document.createElement('div');
+  menu.className = 'theme-menu';
+  menu.id = 'theme-menu';
+  Object.entries(FULL_THEMES).forEach(([key,t])=>{
+    const opt = document.createElement('button');
+    opt.className = 'theme-opt';
+    opt.type = 'button';
+    opt.dataset.theme = key;
+    opt.innerHTML = `<span class="theme-swatch" style="background:${t.swatch}"></span><span>${t.emoji} ${t.label}</span>`;
+    opt.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      applyAccentTheme(key);
+      menu.classList.remove('open');
+    });
+    menu.appendChild(opt);
   });
-  let saved = 'gold';
-  try { saved = localStorage.getItem('wf_accent_theme') || 'gold'; } catch(e){}
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', ()=>menu.classList.remove('open'));
+  picker.appendChild(btn);
+  picker.appendChild(menu);
+  let saved = 'tenno';
+  try { saved = localStorage.getItem('wf_accent_theme') || 'tenno'; } catch(e){}
+  // Migrate old color-only keys (from before full themes existed) to their
+  // closest faction equivalent, so existing choices aren't silently reset.
+  const LEGACY_MAP = {gold:'tenno', cyan:'corpus', red:'grineer', purple:'orokin', green:'infested'};
+  if(LEGACY_MAP[saved]) saved = LEGACY_MAP[saved];
+  if(!FULL_THEMES[saved]) saved = 'tenno';
   applyAccentTheme(saved);
 }
 
