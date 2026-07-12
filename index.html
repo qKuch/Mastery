@@ -354,7 +354,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 <p class="intro-el" style="animation-delay:.12s;font-size:.7rem;color:var(--tone-666);margin:-.4rem 0 .8rem">
   📦 Catalog de iteme verificat pentru <strong style="color:var(--tone-888)">Update 42.0 (2026-03-25)</strong> ·
   <a href="https://wiki.warframe.com/w/Mastery_Rank#Total_Mastery" target="_blank" rel="noopener" style="color:var(--accent)">verifică pe wiki ↗</a>
-  <span style="color:var(--tone-555)"> — nu e verificare automată; dacă a mai ieșit un update de Warframe, cere-mi să regenerez catalogul.</span>
+  <span style="color:var(--tone-555)"> — nu e verificare automată.</span>
 </p>
 
 <div class="card intro-el" style="animation-delay:.16s;border-color:var(--info-card-b);background:var(--info-card-bg)">
@@ -1456,7 +1456,16 @@ async function process(file){
       let off=0;for(const c of out){all.set(c,off);off+=c.length;}
       return JSON.parse(new TextDecoder().decode(all));
     })();
-    const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category));
+    // Known bogus/internal catalog entries that share a display name with a
+    // real item but aren't actually player-obtainable (e.g. NPC/enemy-only
+    // duplicates with no real acquisition path). Confirmed via a real save
+    // file: TnDoppelgangerGrimoire has 0 components and never appears in
+    // XPInfo even when the real TnGrimoire is fully mastered — it was
+    // permanently showing as "missing" with no way to ever complete it.
+    const EXCLUDED_BOGUS_ITEMS = new Set([
+      '/Lotus/Weapons/Tenno/Grimoire/TnDoppelgangerGrimoire',
+    ]);
+    const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category) && !EXCLUDED_BOGUS_ITEMS.has(w.uniqueName));
     const allWarframesRaw = __allItems.filter(w=>w.category==='Warframes');
     const allSentinelsRaw = __allItems.filter(w=>w.category==='Sentinels');
     const allPetsRaw = __allItems.filter(w=>w.category==='Pets');
