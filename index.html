@@ -2121,12 +2121,25 @@ function xpPerItem(item){
 }
 
 // Subtle ambient background glow that shifts with MR progress — cool blue
-// early on, warming toward gold as you approach MR30 (and staying gold for
-// Legendary ranks beyond it). Purely cosmetic, kept very low-opacity so it
-// never competes with card contrast/readability.
+// early on, warming toward the active accent color as you approach MR30
+// (and staying there for Legendary ranks beyond it). Purely cosmetic, kept
+// very low-opacity so it never competes with card contrast/readability.
+let currentAccentHue = 42; // gold, default — kept in sync by applyAccentTheme
+let lastKnownMR = 0;
 function applyMRBackgroundTheme(mr){
-  const t = Math.max(0, Math.min(1, (mr||0)/30));
-  const hue = 210 - t*168; // 210° (blue) -> 42° (gold)
+  lastKnownMR = mr||0;
+  // Scales to rank 36 (LR6, the actual max rank — see mrName()) rather than
+  // 30, so MR30 players aren't already pegged at max glow with nowhere left
+  // to go if they push into Legendary ranks.
+  const t = Math.max(0, Math.min(1, lastKnownMR/36));
+  // Interpolate around the shorter arc between 210° (blue) and the accent's
+  // hue, so e.g. a purple accent (282°) warms up via violet, not by looping
+  // all the way around through gold/red first.
+  let target = currentAccentHue;
+  let diff = target - 210;
+  if(diff > 180) diff -= 360;
+  if(diff < -180) diff += 360;
+  const hue = ((210 + diff*t) + 360) % 360;
   const alpha = 0.14 + t*0.14;
   document.documentElement.style.setProperty('--mr-glow', `hsla(${hue.toFixed(0)},75%,58%,${alpha.toFixed(3)})`);
 }
@@ -2135,13 +2148,14 @@ function applyMRBackgroundTheme(mr){
 // family of shades) now reads from CSS custom properties, so switching the
 // theme just means overwriting those variables. Each palette is hand-picked
 // per color (not auto-derived from one hue) to keep contrast/mood consistent
-// with the original gold theme's design.
+// with the original gold theme's design. `hue` is each accent's approximate
+// HSL hue, used only to steer the ambient MR glow above.
 const ACCENT_THEMES = {
-  gold:   {label:'Auriu',   swatch:'#c8a84b', accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540', border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600', rgb:'200,168,75', lightRgb:'240,208,128'},
-  cyan:   {label:'Cyan',    swatch:'#4bc8c0', accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86', border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18', rgb:'75,200,192', lightRgb:'128,240,230'},
-  red:    {label:'Roșu',    swatch:'#c85a5a', accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540', border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800', rgb:'200,90,90',  lightRgb:'240,157,128'},
-  purple: {label:'Mov',     swatch:'#a85ac8', accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a', border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a', rgb:'168,90,200', lightRgb:'208,128,240'},
-  green:  {label:'Verde',   swatch:'#5ac87a', accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55', border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08', rgb:'90,200,122', lightRgb:'128,240,160'},
+  gold:   {label:'Auriu',   swatch:'#c8a84b', accent:'#c8a84b', light:'#f0d080', lighter:'#ffcc55', mid:'#e0b355', dim:'#8a7540', border:'#554400', border2:'#4a4020', bg:'#3a3020', bg2:'#2a2010', bg3:'#1a1600', rgb:'200,168,75', lightRgb:'240,208,128', hue:42},
+  cyan:   {label:'Cyan',    swatch:'#4bc8c0', accent:'#4bc8c0', light:'#80f0e6', lighter:'#55ffee', mid:'#55d6cc', dim:'#408a86', border:'#005550', border2:'#204a48', bg:'#203a38', bg2:'#102a28', bg3:'#001a18', rgb:'75,200,192', lightRgb:'128,240,230', hue:176},
+  red:    {label:'Roșu',    swatch:'#c85a5a', accent:'#c85a5a', light:'#f09d80', lighter:'#ff7855', mid:'#e07d55', dim:'#8a4540', border:'#551a10', border2:'#4a2010', bg:'#3a2020', bg2:'#2a1010', bg3:'#1a0800', rgb:'200,90,90',  lightRgb:'240,157,128', hue:0},
+  purple: {label:'Mov',     swatch:'#a85ac8', accent:'#a85ac8', light:'#d080f0', lighter:'#cc55ff', mid:'#b555e0', dim:'#6a408a', border:'#351055', border2:'#30104a', bg:'#26103a', bg2:'#1a102a', bg3:'#10001a', rgb:'168,90,200', lightRgb:'208,128,240', hue:282},
+  green:  {label:'Verde',   swatch:'#5ac87a', accent:'#5ac87a', light:'#80f0a0', lighter:'#55ff8c', mid:'#55e07d', dim:'#408a55', border:'#105520', border2:'#104a20', bg:'#1a3a20', bg2:'#102a18', bg3:'#001a08', rgb:'90,200,122', lightRgb:'128,240,160', hue:138},
 };
 function applyAccentTheme(name){
   const t = ACCENT_THEMES[name] || ACCENT_THEMES.gold;
@@ -2158,6 +2172,8 @@ function applyAccentTheme(name){
   root.setProperty('--accent-bg3', t.bg3);
   root.setProperty('--accent-rgb', t.rgb);
   root.setProperty('--accent-light-rgb', t.lightRgb);
+  currentAccentHue = t.hue;
+  applyMRBackgroundTheme(lastKnownMR);
   document.querySelectorAll('.theme-dot').forEach(d=>d.classList.toggle('on', d.dataset.theme===name));
   try { localStorage.setItem('wf_accent_theme', name); } catch(e){}
 }
