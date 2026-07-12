@@ -1470,7 +1470,7 @@ function validateCatalogHealth(allWeaponsList, warframesList, archwingList, sent
   // 2. Category counts vs the wiki's published totals. A mismatch usually
   // means either a new Warframe update added/removed items (catalog needs
   // regenerating) or another bogus duplicate slipped through.
-  const excludedWarframes = new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel']);
+  const excludedWarframes = new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel','Bonewidow','Voidrig']);
   const counts = { Warframes:0, Archwing:0, Sentinels:0 };
   allWeaponsList.forEach(w=>{ counts[w.category] = (counts[w.category]||0) + 1; });
   warframesList.forEach(w=>{ if(!excludedWarframes.has(w.name)) counts.Warframes++; });
@@ -1638,7 +1638,7 @@ async function process(file){
     });
 
     // Filter warframes
-    const excludedWarframes=new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel']);
+    const excludedWarframes=new Set(['Helminth','Operator','Drifter','Kahl','Void Demon','Murmur','Void Angel','Bonewidow','Voidrig']);
     const notMasteredWarframes=allWarframesRaw.filter(w=>{
       if(!w.uniqueName||!w.name)return false;
       if(!w.uniqueName.includes('/Lotus/Powersuits/'))return false;
