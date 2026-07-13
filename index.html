@@ -69,6 +69,7 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 .gs-row-name{flex:1;font-size:.85rem;color:var(--text-color)}
 .gs-row-sub{font-size:.68rem;color:var(--tone-666)}
 .gs-empty{padding:1.2rem;text-align:center;color:var(--tone-666);font-size:.82rem}
+#global-search-btn:hover{border-color:var(--accent);color:var(--accent)}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease,text-shadow .3s ease}
 #prime-filter-btn.pf-normal{background:var(--status-owned-bg);border-color:var(--status-owned-b);color:var(--status-owned-text)}
 #prime-filter-btn.pf-prime{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent-light);text-shadow:0 0 8px rgba(var(--accent-light-rgb),.35)}
@@ -412,6 +413,9 @@ button:focus-visible, a:focus-visible, input:focus-visible,
     <button class="tab" data-tab="materials">🧪 Materiale</button>
     <button class="tab" data-tab="calculator">🧮 Calculator MR</button>
     <button class="tab" data-tab="sell">💰 De vândut</button>
+    <button id="global-search-btn" title="Căutare globală (Ctrl+K)" style="margin-left:auto;align-self:center;background:var(--wcard-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-btn);color:var(--tone-888);padding:.4rem .7rem;font-size:.8rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .15s">
+      🔍 <span style="font-size:.68rem;opacity:.7">Ctrl+K</span>
+    </button>
   </div>
 
   <!-- Mastery tab -->
@@ -4167,6 +4171,7 @@ function openGlobalSearch(){
 function closeGlobalSearch(){
   document.getElementById('global-search-modal').style.display = 'none';
 }
+document.getElementById('global-search-btn').addEventListener('click', openGlobalSearch);
 document.getElementById('global-search-input').addEventListener('input', (e)=>{
   _gsResults = gsCollectResults(e.target.value);
   _gsSelIdx = 0;
