@@ -1442,7 +1442,7 @@ function computeCategoryMaxPossible(){
 // modular, tracked separately) — comparing against it would always show a
 // false mismatch that has nothing to do with a real catalog problem.
 const CATALOG_EXPECTED_COUNTS = {
-  Primary: 194, Secondary: 147, 'Arch-Gun': 20, 'Arch-Melee': 8,
+  Primary: 195, Secondary: 147, 'Arch-Gun': 20, 'Arch-Melee': 8, // Primary +1 for Haalvu (Update 43.0.7, added manually above)
   // Warframes verified manually against a real save (2026-07-12) after
   // excluding Bonewidow/Voidrig (Necramechs, miscategorized in the catalog)
   // — every remaining name checks out as a real, current Warframe, including
@@ -1541,6 +1541,19 @@ async function process(file){
       '/Lotus/Weapons/Tenno/Grimoire/TnDoppelgangerGrimoire',
     ]);
     const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category) && !EXCLUDED_BOGUS_ITEMS.has(w.uniqueName));
+    // Haalvu — a real Sentient Primary rifle (Mastery 14), introduced in
+    // Update 43.0.7 (2026-07-11), two days before this catalog fix, via a
+    // TennoCon 2026 Twitch-drop promotion rather than normal Foundry
+    // crafting. No components: it's delivered directly, not built — an
+    // empty components list is the correct/accurate state here, not a
+    // data gap like Sirius & Orion.
+    allWeapons.push({
+      name: 'Haalvu',
+      uniqueName: '/Lotus/Weapons/Sentients/SentOctaMiniGun/SentOctaMiniGun',
+      category: 'Primary',
+      components: [],
+      isModular: false,
+    });
     // Sirius & Orion — released in Update 43.0 (2026-06-17), after this
     // catalog snapshot was built, confirmed real via wiki.warframe.com.
     // Component uniqueNames confirmed directly against a real decrypted save
