@@ -70,6 +70,13 @@ h1{font-size:1.4rem;font-weight:500;color:var(--accent);margin-bottom:.2rem;posi
 .gs-row-sub{font-size:.68rem;color:var(--tone-666)}
 .gs-empty{padding:1.2rem;text-align:center;color:var(--tone-666);font-size:.82rem}
 #global-search-btn:hover{border-color:var(--accent);color:var(--accent)}
+#reload-toast.show{animation:toastInOut 3s ease forwards}
+@keyframes toastInOut{
+  0%{opacity:0;transform:translateY(10px)}
+  10%{opacity:1;transform:translateY(0)}
+  85%{opacity:1;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(10px)}
+}
 #prime-filter-btn{transition:background .2s ease,border-color .2s ease,color .2s ease,text-shadow .3s ease}
 #prime-filter-btn.pf-normal{background:var(--status-owned-bg);border-color:var(--status-owned-b);color:var(--status-owned-text)}
 #prime-filter-btn.pf-prime{background:var(--accent-bg2);border-color:var(--accent);color:var(--accent-light);text-shadow:0 0 8px rgba(var(--accent-light-rgb),.35)}
@@ -623,6 +630,9 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 
 </div>
 
+<div id="reload-toast" style="display:none;position:fixed;bottom:24px;right:24px;z-index:3000;background:var(--card-bg);border:1px solid var(--status-craftable-b);color:var(--status-craftable-text);border-radius:var(--radius-btn);padding:.7rem 1rem;font-size:.82rem;box-shadow:0 8px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:.5rem">
+  🔄 Date reîmprospătate automat
+</div>
 <div id="global-search-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);align-items:flex-start;justify-content:center;padding-top:12vh">
   <div style="background:var(--card-bg);border:1px solid var(--border-neutral);border-radius:var(--radius-lg);width:min(560px,90vw);max-height:65vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(0,0,0,.5)">
     <input type="text" id="global-search-input" placeholder="Caută în tot tool-ul... (Mastery, Materiale, Mods, Arcane, De vândut)" style="background:none;border:none;border-bottom:1px solid var(--border-neutral);color:var(--text-color);font-size:1rem;padding:.9rem 1rem;outline:none">
@@ -885,7 +895,7 @@ function buildCard(w){
   const d=document.createElement('div');
   const cs=w.craftStatus;
   const isPrime=isPrimeItem(w.name);
-  const isImproved=w.uniqueName && improvedItemNames.has(w.uniqueName);
+  const isImproved=w.uniqueName && improvedItemNames.has(w.uniqueName) && !document.hidden;
   d.className='wcard'+(cs==='claimable'?' claimable':cs==='owned'?' owned':cs==='craftable'?' craftable':(cs==='bp_only'||cs==='not_built')?' partial':'')+(isPrime?' prime-item':'')+(isImproved?' status-improved':'');
   const wikiSlug=w.modularWikiSlug || w.name.replace(/ /g,'_');
   const wikiUrl=`https://wiki.warframe.com/w/${encodeURIComponent(wikiSlug)}#Acquisition`;
@@ -3325,6 +3335,7 @@ async function pollFileHandle(){
     if(_watchLastModified !== null && file.lastModified !== _watchLastModified){
       _watchLastModified = file.lastModified;
       await loadFile(file, _lastFileHandle);
+      notifyAutoReload();
       return;
     }
     _watchLastModified = file.lastModified;
@@ -3333,6 +3344,43 @@ async function pollFileHandle(){
     stopWatching();
   }
 }
+
+// Toast for auto-reload feedback. If the tab is in the background when the
+// reload happens, showing it right away would just be missed — instead it's
+// queued and shown once the user actually switches back to this tab. Same
+// deferral applies to the per-card "status improved" pulse (see buildCard):
+// it's suppressed while hidden and re-triggered here via a fresh render()
+// once the tab is actually visible, instead of playing out unseen.
+let _pendingReloadToast = false;
+let _pendingImprovedReveal = false;
+function showReloadToast(){
+  const toast = document.getElementById('reload-toast');
+  const claimableNew = [...improvedItemNames].filter(u=>{
+    const w = missing.find(x=>x.uniqueName===u);
+    return w && w.craftStatus === 'claimable';
+  }).length;
+  toast.innerHTML = claimableNew
+    ? `🔄 Date reîmprospătate automat — <strong>${claimableNew} ${claimableNew===1?'item gata':'iteme gata'} de luat din Foundry!</strong>`
+    : `🔄 Date reîmprospătate automat`;
+  toast.classList.remove('show');
+  toast.style.display = 'flex';
+  void toast.offsetWidth; // restart animation
+  toast.classList.add('show');
+  setTimeout(()=>{ toast.style.display = 'none'; }, 3000);
+}
+function notifyAutoReload(){
+  if(document.hidden){
+    _pendingReloadToast = true;
+    if(improvedItemNames.size) _pendingImprovedReveal = true;
+  } else {
+    showReloadToast();
+  }
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden) return;
+  if(_pendingReloadToast){ _pendingReloadToast = false; showReloadToast(); }
+  if(_pendingImprovedReveal){ _pendingImprovedReveal = false; render(); }
+});
 
 function startWatching(){
   if(_watchTimer || !_lastFileHandle) return;
