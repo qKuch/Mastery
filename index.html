@@ -1543,23 +1543,20 @@ async function process(file){
     const allWeapons = __allItems.filter(w=>['Primary','Secondary','Melee','Arch-Gun','Arch-Melee'].includes(w.category) && !EXCLUDED_BOGUS_ITEMS.has(w.uniqueName));
     // Sirius & Orion — released in Update 43.0 (2026-06-17), after this
     // catalog snapshot was built, confirmed real via wiki.warframe.com.
-    // Top-level components confirmed via a real wiki screenshot (main BP:
-    // 25,000cr + 1 Chassis + 1 Neuroptics + 1 Systems + 3 Orokin Cell, 3
-    // days). uniqueName paths follow DE's established WarframeRecipes naming
-    // convention (seen on every other frame, e.g. VOLTChassisComponent) but
-    // aren't independently verified against game files — if a path is
-    // slightly off, worst case a component just shows as "missing" by
-    // default, which is the correct starting assumption anyway.
+    // Component uniqueNames confirmed directly against a real decrypted save
+    // (Recipes/PendingRecipes arrays) — the exact casing is "SiriusOrion",
+    // not "SIRIUSORION" like the first guess, which is why craft status
+    // wasn't detecting correctly before.
     const SIRIUS_ORION_STUB = {
       name: 'Sirius & Orion',
       uniqueName: '/Lotus/Powersuits/Constellation/Constellation',
       category: 'Warframes',
       components: [
-        { name: 'Blueprint', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONBlueprint', itemCount: 1 },
-        { name: 'Chassis', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONChassisComponent', itemCount: 1 },
-        { name: 'Neuroptics', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONHelmetComponent', itemCount: 1 },
+        { name: 'Blueprint', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SiriusOrionBlueprint', itemCount: 1 },
+        { name: 'Chassis', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SiriusOrionChassisComponent', itemCount: 1 },
+        { name: 'Neuroptics', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SiriusOrionHelmetComponent', itemCount: 1 },
         { name: 'Orokin Cell', uniqueName: '/Lotus/Types/Items/MiscItems/OrokinCell', itemCount: 3 },
-        { name: 'Systems', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SIRIUSORIONSystemsComponent', itemCount: 1 },
+        { name: 'Systems', uniqueName: '/Lotus/Types/Recipes/WarframeRecipes/SiriusOrionSystemsComponent', itemCount: 1 },
       ],
       isModular: false,
       knownIncompleteData: true,
