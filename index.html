@@ -3668,14 +3668,12 @@ function buildSellItems(allItems, mastered, ownedItems, pendingBPs, inProgressBP
     // to the Foundry (claimable/in-progress) — either way you possess one instance.
     if (!ownedBPs.has(bpComp.uniqueName) && !pendingBPs.has(bpComp.uniqueName) && !(inProgressBPs && inProgressBPs.has(bpComp.uniqueName))) continue;
 
-    const subBPPaths = craftableComps.map(c => compToBPPath(c.uniqueName));
-    // Component is "owned" if: BP is in inv.Recipes (unbuilt), built component is in MiscItems,
-    // or the sub-part BP is currently in the Foundry (claimable or still building).
-    if (!subBPPaths.every((bp, i) =>
-      ownedBPs.has(bp) ||
-      (miscItems && miscItems.has(craftableComps[i].uniqueName)) ||
-      pendingBPs.has(bp) ||
-      (inProgressBPs && inProgressBPs.has(bp))
+    // Component is "owned" only if you have ENOUGH of it — dual-wielded
+    // weapons (Dual Zoren Prime etc.) need 2x Blade + 2x Handle per set, not
+    // 1x. Reusing getCompBPCount (same raw-count logic as the setCount math
+    // below) instead of a separate presence-only check keeps both in sync.
+    if (!craftableComps.every(c =>
+      getCompBPCount(c, ownedBPsCount, miscItems, pendingBPs, inProgressBPs) >= (c.itemCount || 1)
     )) continue;
 
     let reason = null, reasonClass = '', reserveOwn = false;
@@ -3700,7 +3698,9 @@ function buildSellItems(allItems, mastered, ownedItems, pendingBPs, inProgressBP
     const mainRawCount = ownedBPsCount ? (ownedBPsCount.get(bpComp.uniqueName) || 0) : (ownedBPs.has(bpComp.uniqueName) ? 1 : 0);
     const mainInFoundry = bpComp && (pendingBPs.has(bpComp.uniqueName) || (inProgressBPs && inProgressBPs.has(bpComp.uniqueName)));
     const mainBpCount = mainInFoundry ? (Math.max(mainRawCount - 1, 0) + 1) : mainRawCount;
-    const subCounts = craftableComps.map(c => getCompBPCount(c, ownedBPsCount, miscItems, pendingBPs, inProgressBPs));
+    const subCounts = craftableComps.map(c =>
+      Math.floor(getCompBPCount(c, ownedBPsCount, miscItems, pendingBPs, inProgressBPs) / (c.itemCount || 1))
+    );
     let setCount = Math.min(mainBpCount, ...subCounts);
 
     // If this item isn't mastered or already owned as a separate built copy, the
@@ -3746,7 +3746,8 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
     // them, treat 1 raw unit as consumed by that build instead.
     const isWeaponPart = c.uniqueName && c.uniqueName.includes('/WeaponParts/');
     const total = (inFoundry > 0 && !isWeaponPart) ? (Math.max(raw - 1, 0) + inFoundry) : (raw + inFoundry);
-    const ok = total >= 1;
+    const need = c.itemCount || 1;
+    const ok = total >= need;
     const rowClass = ok ? 'row-ok' : 'row-miss';
     const qtyClass = ok ? 'qty-ok' : 'qty-miss';
     const icon = ok ? '✓' : '✕';
@@ -3754,7 +3755,7 @@ function showSellPopup(w, mainBp, craftableComps, anchorEl) {
     return `<div class="comp-row ${rowClass}">
       <span class="comp-icon ${qtyClass}">${icon}</span>
       <span class="comp-name">${c.name}</span>
-      <span class="comp-qty ${qtyClass}">${total} BP${foundryNote}</span>
+      <span class="comp-qty ${qtyClass}">${total}${need>1?'/'+need:''} BP${foundryNote}</span>
     </div>`;
   }).join('');
 
