@@ -678,6 +678,12 @@ function isPrimeItem(name){ return /\bPrime\b/.test(name||''); }
 function normalizeSearch(str){
   return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 }
+// Item names go straight into innerHTML template strings ("Sirius & Orion"
+// already contains &; a future name with quotes would break title="..."
+// attributes). Cheap escape for the few characters that matter.
+function escapeHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 function updatePrimeBtn(){
   const btn=document.getElementById('prime-filter-btn');
   if(!btn) return;
@@ -910,7 +916,7 @@ function buildCard(w){
   else if(cs==='not_built') craftTag=`<span class="craft-tag tag-bp">🛠️ De construit</span>`;
   const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0 || (w.isModular && w.modularBpPath);
   const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-  d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
+  d.innerHTML=`<div class="wname" title="${escapeHtml(w.name)}">${escapeHtml(w.name)}</div>
   <div class="wcard-footer">
     <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
     ${craftTag}${infoBtn}
@@ -1016,7 +1022,7 @@ function render(){
     const timerStr=msLeft>0?(hLeft>0?`${hLeft}h ${mLeft}m`:`${mLeft}m`):'gata curând';
     const hasComps=(w.components||[]).filter(c=>c.name!=='Blueprint'&&c.uniqueName).length>0;
     const infoBtn=hasComps?`<button class="info-btn" title="Vezi componente">ℹ</button>`:'';
-    d.innerHTML=`<div class="wname" title="${w.name}">${w.name}</div>
+    d.innerHTML=`<div class="wname" title="${escapeHtml(w.name)}">${escapeHtml(w.name)}</div>
     <div class="wcard-footer">
       <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
       <span class="craft-tag tag-crafting">⚗ ${timerStr}</span>
@@ -1983,6 +1989,21 @@ async function process(file){
     const _xpDebug = computeMasteryXP(inv);
     const totalMasteryXP = _xpDebug.total;
 
+    // Sanity check: computed XP must be consistent with the ACTUAL rank from
+    // the save file. Only the LOWER bound is a hard invariant (you cannot
+    // hold a rank without its minimum XP). The upper bound is deliberately
+    // NOT checked: in Warframe you can accumulate XP past the next rank's
+    // threshold and simply not have taken the mastery test yet — that's
+    // normal, not a bug. (A lower-bound violation is what would have flagged
+    // today's Plexus/MOA undercounting instantly.)
+    {
+      const mrNow = inv.PlayerLevel || 0;
+      const floor = mrXpRequired(mrNow);
+      if(totalMasteryXP < floor){
+        catalogWarnings.push(`XP-ul calculat (${totalMasteryXP.toLocaleString()}) e sub minimul necesar pentru rank-ul real ${mrName(mrNow)} din fișier (minim: ${floor.toLocaleString()}). O regulă de calcul subestimează ceva — spune-mi și investigăm.`);
+      }
+    }
+
     // DEBUG — one compact copy-pasteable JSON line with the full XP breakdown.
     (function debugXPFinal(){
       _xpDebug.total = totalMasteryXP;
@@ -2024,11 +2045,17 @@ async function process(file){
       warnBox.style.display = 'none';
     }
     st(`✓ Gata! ${notMastered.length} iteme fără mastery — ${claimCount} de luat din Foundry${craftingCount?`, ${craftingCount} în craftare`:''}${craftCount?`, ${craftCount} craftabile`:''}${bpCount?`, ${bpCount} cu BP`:'.'}.`,'s-ok');
+    document.title = claimCount > 0
+      ? `(${claimCount}⬇) Warframe Mastery Checker`
+      : 'Warframe Mastery Checker';
     render();
   }catch(err){
     console.error(err);
     document.getElementById('skeleton-loading').style.display='none';
-    st('Eroare: '+err.message,'s-err');
+    const friendly = /JSON|decrypt|cipher|padding|Unexpected token/i.test(err.message||'')
+      ? 'Fișierul nu pare să fie un lastData.dat valid de la AlecaFrame. Verifică dacă ai selectat fișierul corect (din %localappdata%\\AlecaFrame) și dacă AlecaFrame a terminat sincronizarea.'
+      : 'A apărut o eroare la procesarea fișierului.';
+    st(`${friendly} (detaliu tehnic: ${err.message})`,'s-err');
   }
 }
 
@@ -3023,12 +3050,22 @@ document.addEventListener('click', e=>{
   }
 });
 
+// Debounced search: re-rendering hundreds of cards on every keystroke lags
+// when typing fast — a 120ms pause after the last key is imperceptible to
+// the user but collapses a burst of renders into one.
+let _searchDebounce = null;
 document.addEventListener('input', e=>{
-  if(e.target.id==='mat-search') renderMaterials();
-  if(e.target.id==='search') render();
-  if(e.target.id==='ing-search') renderIngredients();
-  if(e.target.id==='mods-search') renderMods();
-  if(e.target.id==='arcanes-search') renderArcanes();
+  const handlers = {
+    'mat-search': renderMaterials,
+    'search': render,
+    'ing-search': renderIngredients,
+    'mods-search': renderMods,
+    'arcanes-search': renderArcanes,
+  };
+  const fn = handlers[e.target.id];
+  if(!fn) return;
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(fn, 120);
 });
 
 document.addEventListener('keydown', e=>{
@@ -3329,12 +3366,14 @@ function updateWatchButton(){
   btn.textContent = isWatching ? 'Monitorizare activă' : '👁 Monitorizează automat';
 }
 
+let _watchFailStreak = 0;
 async function pollFileHandle(){
   if(!_lastFileHandle) return;
   try {
     const perm = await _lastFileHandle.queryPermission({mode:'read'});
     if(perm !== 'granted'){ stopWatching(); return; }
     const file = await _lastFileHandle.getFile();
+    _watchFailStreak = 0;
     if(_watchLastModified !== null && file.lastModified !== _watchLastModified){
       _watchLastModified = file.lastModified;
       await loadFile(file, _lastFileHandle);
@@ -3343,8 +3382,11 @@ async function pollFileHandle(){
     }
     _watchLastModified = file.lastModified;
   } catch(e){
-    // File moved/deleted, or permission revoked mid-session — stop quietly.
-    stopWatching();
+    // A single read failure is often transient — AlecaFrame may be rewriting
+    // the file at the exact moment we read it. Only give up after several
+    // consecutive failures (file genuinely moved/deleted/revoked).
+    _watchFailStreak++;
+    if(_watchFailStreak >= 3) stopWatching();
   }
 }
 
@@ -4046,7 +4088,7 @@ function renderSell() {
       );
       const mainBp = (w.components||[]).find(c => c.name === 'Blueprint');
 
-      d.innerHTML = `<div class="sell-name" title="${w.name}">${w.name}</div>
+      d.innerHTML = `<div class="sell-name" title="${escapeHtml(w.name)}">${escapeHtml(w.name)}</div>
         <div class="sell-top">
           <span class="badge ${badgeClass(w.category)}">${badgeLabel(w.category)}</span>
           <span class="sell-reason ${w.sellReasonClass}">${w.sellReason}</span>
